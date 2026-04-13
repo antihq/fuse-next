@@ -166,6 +166,24 @@ test('server show page shows provisioning command', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('ssh root@10.0.0.1');
-    $response->assertSee('https://example.com/provision.sh');
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/servers/'.$server->id.'/provision-script');
+});
+
+test('server show page provisioning command contains signature', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('signature=');
 });

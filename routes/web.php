@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -7,6 +8,9 @@ use Laravel\Fortify\Features;
 Route::view('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
+
+Route::middleware('signed')->get('servers/{server}/provision-script', ServerProvisionScriptController::class)
+    ->name('servers.provision-script');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Server;
+use Illuminate\Support\Facades\URL;
 
 class ServerProvisionScriptController extends Controller
 {
@@ -13,6 +14,8 @@ class ServerProvisionScriptController extends Controller
         if (empty($publicKey)) {
             abort(500, 'Server SSH public key is not configured.');
         }
+
+        $callbackUrl = URL::signedRoute('servers.provision-callback', ['server' => $server]);
 
         $script = <<<SHELL
 set -eu
@@ -36,6 +39,10 @@ chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
 
 echo "SSH key added successfully"
+
+echo "Notifying Fuse..."
+curl -s -X POST "{$callbackUrl}" || true
+echo "Done!"
 SHELL;
 
         return response($script, 200, ['Content-Type' => 'text/x-shellscript']);

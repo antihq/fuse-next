@@ -36,5 +36,6 @@ return [
     ],
 
     'server_ssh_public_key' => env('SERVER_SSH_PUBLIC_KEY'),
+    'server_ssh_private_key_path' => env('SERVER_SSH_PRIVATE_KEY_PATH'),
 
 ];

@@ -129,3 +129,27 @@ test('provision script embeds public key in heredoc', function () {
     expect($content)->toContain($publicKey);
     expect($content)->toContain('EOF');
 });
+
+test('provision script includes callback url', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $callbackUrl = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+    $url = URL::signedRoute('servers.provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Notifying Fuse..."');
+    expect($content)->toContain('curl -s -X POST');
+    expect($content)->toContain($callbackUrl);
+});

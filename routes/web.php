@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ServerProvisionCallbackController;
 use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,9 @@ Route::view('/', 'welcome', [
 
 Route::middleware('signed')->get('servers/{server}/provision-script', ServerProvisionScriptController::class)
     ->name('servers.provision-script');
+
+Route::middleware('signed')->post('servers/{server}/provision-callback', ServerProvisionCallbackController::class)
+    ->name('servers.provision-callback');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])

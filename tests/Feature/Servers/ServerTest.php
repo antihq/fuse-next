@@ -1,9 +1,12 @@
 <?php
 
+use App\Enums\ServerStatus;
 use App\Enums\TeamRole;
+use App\Jobs\TestServerConnectivity;
 use App\Models\Server;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 test('servers can be created by owner', function () {
@@ -186,4 +189,88 @@ test('server show page provisioning command contains signature', function () {
 
     $response->assertOk();
     $response->assertSee('signature=');
+});
+
+test('test connection button dispatches job', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('testConnection');
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioning);
+
+    Queue::assertPushed(TestServerConnectivity::class, fn ($job) => $job->server->id === $server->id);
+});
+
+test('test connection button only visible when pending', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $provisionedServer = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $provisionedServer->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Test Connection');
+    $response->assertDontSee('Provisioning Command');
+});
+
+test('provisioning section hidden when server is provisioned', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Provisioning Command');
+    $response->assertDontSee('SSH to your server as root');
+});
+
+test('refresh server refreshes model status', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $server->update(['status' => ServerStatus::Provisioned]);
+
+    $livewire->call('refreshServer');
+
+    $livewire->assertSet('server.status', ServerStatus::Provisioned);
 });

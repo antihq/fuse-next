@@ -1,22 +1,34 @@
 <?php
 
+use App\Enums\ServerStatus;
+use App\Jobs\TestServerConnectivity;
 use App\Models\Server;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Server Details')] class extends Component
 {
+    #[Locked]
+    public int $serverId;
+
     public Server $server;
 
     public function mount(Server $server): void
     {
+        $this->serverId = $server->id;
         $this->server = $server;
 
         $team = Auth::user()->currentTeam;
 
         $this->authorize('view', [$team, $this->server]);
+    }
+
+    public function refreshServer(): void
+    {
+        $this->server->refresh();
     }
 
     public function getProvisioningCommandProperty(): string
@@ -30,9 +42,22 @@ new #[Title('Server Details')] class extends Component
     {
         return Auth::user()->currentTeam;
     }
+
+    public function testConnection(): void
+    {
+        $this->server->status = ServerStatus::Provisioning;
+        $this->server->save();
+
+        TestServerConnectivity::dispatch($this->server);
+    }
+
+    public function getShouldPollProperty(): bool
+    {
+        return $this->server->status === ServerStatus::Provisioning;
+    }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif>
     @include('partials.settings-heading')
 
     <flux:heading class="sr-only">{{ __('Server Details') }}</flux:heading>
@@ -76,11 +101,12 @@ new #[Title('Server Details')] class extends Component
             </div>
         </div>
 
+        @if($server->status === ServerStatus::Pending)
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg" class="mb-4">{{ __('Provisioning Command') }}</flux:heading>
             <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to authorize our SSH key') }}</flux:subheading>
 
-            <div class="relative">
+            <div class="mb-4 relative">
                 <flux:input
                     :value="$this->provisioningCommand"
                     readonly
@@ -100,8 +126,12 @@ new #[Title('Server Details')] class extends Component
                     <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
                 </flux:button>
             </div>
+
+            <flux:button wire:click="testConnection" class="w-full">
+                <span wire:loading.remove>{{ __('Test Connection') }}</span>
+                <span wire:loading>{{ __('Testing...') }}</span>
+            </flux:button>
         </div>
+        @endif
     </div>
 </section>
-
-

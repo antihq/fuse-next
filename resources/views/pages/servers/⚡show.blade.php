@@ -38,6 +38,13 @@ new #[Title('Server Details')] class extends Component
         return "wget --no-verbose -O - {$url} | bash";
     }
 
+    public function getFullProvisioningCommandProperty(): string
+    {
+        $url = URL::signedRoute('servers.full-provision-script', ['server' => $this->server]);
+
+        return "wget --no-verbose -O - {$url} | bash";
+    }
+
     public function getTeamProperty()
     {
         return Auth::user()->currentTeam;
@@ -54,6 +61,14 @@ new #[Title('Server Details')] class extends Component
     public function getShouldPollProperty(): bool
     {
         return $this->server->status === ServerStatus::Provisioning;
+    }
+
+    public function markProvisioned(): void
+    {
+        $this->authorize('update', [$this->team, $this->server]);
+
+        $this->server->status = ServerStatus::Provisioned;
+        $this->server->save();
     }
 }; ?>
 
@@ -103,7 +118,7 @@ new #[Title('Server Details')] class extends Component
 
         @if($server->status === ServerStatus::Pending)
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Provisioning Command') }}</flux:heading>
+            <flux:heading size="lg" class="mb-4">{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
             <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to authorize our SSH key') }}</flux:subheading>
 
             <div class="mb-4 relative">
@@ -130,6 +145,57 @@ new #[Title('Server Details')] class extends Component
             <flux:button wire:click="testConnection" class="w-full">
                 <span wire:loading.remove>{{ __('Test Connection') }}</span>
                 <span wire:loading>{{ __('Testing...') }}</span>
+            </flux:button>
+        </div>
+        @endif
+
+        @if($server->status === ServerStatus::Connected)
+        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            <flux:heading size="lg" class="mb-4">{{ __('Step 2: Provision Server') }}</flux:heading>
+            <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to install Caddy, MySQL, Valkey, PHP, Composer, and Node.js') }}</flux:subheading>
+
+            <div class="mb-4 relative">
+                <flux:input
+                    :value="$this->fullProvisioningCommand"
+                    readonly
+                    class="font-mono text-sm"
+                />
+                <flux:button
+                    x-data="{ copied: false }"
+                    @click="
+                        navigator.clipboard.writeText({{ $this->fullProvisioningCommand }});
+                        copied = true;
+                        setTimeout(() => copied = false, 2000);
+                    "
+                    size="sm"
+                    variant="ghost"
+                    class="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                    <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
+                </flux:button>
+            </div>
+
+            <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
+                {{ __('Provisioning completed? Mark as Provisioned') }}
+            </flux:button>
+        </div>
+        @endif
+
+        @if($server->status === ServerStatus::Provisioning)
+        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            <flux:heading size="lg" class="mb-4">{{ __('Provisioning in Progress') }}</flux:heading>
+            <flux:subheading class="mb-4">{{ __('Your server is being provisioned. This may take a few minutes.') }}</flux:subheading>
+
+            <div class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ __('Installing software...') }}
+            </div>
+
+            <flux:button wire:click="markProvisioned" variant="outline" class="w-full mt-4">
+                {{ __('Provisioning completed? Mark as Provisioned') }}
             </flux:button>
         </div>
         @endif

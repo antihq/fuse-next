@@ -44,4 +44,11 @@ class ServerFactory extends Factory
             'status' => ServerStatus::Failed,
         ]);
     }
+
+    public function connected(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => ServerStatus::Connected,
+        ]);
+    }
 }

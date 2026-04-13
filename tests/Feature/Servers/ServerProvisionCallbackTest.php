@@ -121,3 +121,75 @@ test('callback on failed server triggers re-provisioning', function () {
 
     Queue::assertPushed(TestServerConnectivity::class, fn ($job) => $job->server->id === $server->id);
 });
+
+test('provision callback with completed status sets server to provisioned', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioning,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url, ['status' => 'completed']);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'provisioned']);
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+
+    Queue::assertNothingPushed();
+});
+
+test('provision callback with error param sets server to failed', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioning,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url, ['error' => 'Installation failed']);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'failed']);
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Failed);
+
+    Queue::assertNothingPushed();
+});
+
+test('provision callback from connected status does not dispatch test connectivity job', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Connected,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'provisioning']);
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioning);
+
+    Queue::assertNothingPushed();
+});

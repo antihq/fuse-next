@@ -274,3 +274,170 @@ test('refresh server refreshes model status', function () {
 
     $livewire->assertSet('server.status', ServerStatus::Provisioned);
 });
+
+test('server show page shows step 2 provisioning when connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->connected()->create([
+        'team_id' => $team->id,
+        'ip_address' => '10.0.0.1',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Step 2: Provision Server');
+    $response->assertSee('SSH to your server as root and run this command to install Caddy, MySQL, Valkey, PHP, Composer, and Node.js');
+});
+
+test('server show page shows full provision command when connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->connected()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/servers/'.$server->id.'/full-provision-script');
+});
+
+test('server show page shows mark as provisioned button when connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->connected()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Provisioning completed? Mark as Provisioned');
+});
+
+test('server show page shows provisioning in progress when provisioning', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Provisioning in Progress');
+    $response->assertSee('Your server is being provisioned. This may take a few minutes.');
+    $response->assertSee('Installing software...');
+});
+
+test('server show page shows mark as provisioned button when provisioning', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Provisioning completed? Mark as Provisioned');
+});
+
+test('mark provisioned action sets status to provisioned', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markProvisioned');
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+});
+
+test('mark provisioned action is forbidden for non owners', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markProvisioned')
+        ->assertForbidden();
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioning);
+});
+
+test('polling is active when server is provisioning', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $livewire->assertSet('shouldPoll', true);
+});
+
+test('polling is not active when server is connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->connected()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $livewire->assertSet('shouldPoll', false);
+});

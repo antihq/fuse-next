@@ -28,7 +28,7 @@ class TestServerConnectivity implements ShouldQueue
         $connected = $ssh->testConnection($this->server);
 
         if ($connected) {
-            $this->server->status = ServerStatus::Provisioned;
+            $this->server->status = ServerStatus::Connected;
         } else {
             $this->server->status = ServerStatus::Failed;
         }

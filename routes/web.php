@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ServerFullProvisionScriptController;
 use App\Http\Controllers\ServerProvisionCallbackController;
 use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
@@ -12,6 +13,9 @@ Route::view('/', 'welcome', [
 
 Route::middleware('signed')->get('servers/{server}/provision-script', ServerProvisionScriptController::class)
     ->name('servers.provision-script');
+
+Route::middleware('signed')->get('servers/{server}/full-provision-script', ServerFullProvisionScriptController::class)
+    ->name('servers.full-provision-script');
 
 Route::middleware('signed')->post('servers/{server}/provision-callback', ServerProvisionCallbackController::class)
     ->name('servers.provision-callback');

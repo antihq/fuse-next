@@ -13,7 +13,7 @@ beforeEach(function () {
     $this->app->instance(SshService::class, $this->ssh);
 });
 
-test('marks server as provisioned when ssh succeeds', function () {
+test('marks server as connected when ssh succeeds', function () {
     $server = Server::factory()->create([
         'status' => ServerStatus::Provisioning,
         'ip_address' => '192.168.1.100',
@@ -28,7 +28,7 @@ test('marks server as provisioned when ssh succeeds', function () {
     $job->handle($this->ssh);
 
     $server->refresh();
-    expect($server->status)->toBe(ServerStatus::Provisioned);
+    expect($server->status)->toBe(ServerStatus::Connected);
 });
 
 test('marks server as failed when ssh fails', function () {

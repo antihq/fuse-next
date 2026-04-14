@@ -17,4 +17,8 @@ enum TeamPermission: string
     case CreateServer = 'server:create';
     case DeleteServer = 'server:delete';
     case ViewServer = 'server:view';
+
+    case CreateSite = 'site:create';
+    case DeleteSite = 'site:delete';
+    case ViewSite = 'site:view';
 }

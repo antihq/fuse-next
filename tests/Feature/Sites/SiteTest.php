@@ -401,3 +401,109 @@ test('refresh site refreshes model status', function () {
 
     $livewire->assertSet('site.status', SiteStatus::Deployed);
 });
+
+test('site show page shows redeploy command for deployed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Site Deployed');
+    $response->assertSee('Redeploy Site');
+    $response->assertSee('SSH to your server as fuse and run this command to redeploy the site');
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/sites/'.$site->id.'/redeploy-script');
+});
+
+test('redeploy section not shown for pending site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Pending,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Redeploy Site');
+    $response->assertDontSee('run this command to redeploy the site');
+    $response->assertDontSee('/redeploy-script');
+});
+
+test('deploy command not shown for deployed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Deploy Site');
+    $response->assertDontSee('run this command to deploy the site');
+    $response->assertDontSee('/deploy-script');
+});
+
+test('redeploy section not shown for deploying site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deploying()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Redeploy Site');
+    $response->assertDontSee('run this command to redeploy the site');
+    $response->assertDontSee('/redeploy-script');
+});

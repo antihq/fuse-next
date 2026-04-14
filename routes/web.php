@@ -5,6 +5,7 @@ use App\Http\Controllers\ServerProvisionCallbackController;
 use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Controllers\SiteDeployCallbackController;
 use App\Http\Controllers\SiteDeployScriptController;
+use App\Http\Controllers\SiteRedeployScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -24,6 +25,9 @@ Route::middleware('signed')->post('servers/{server}/provision-callback', ServerP
 
 Route::middleware('signed')->get('sites/{site}/deploy-script', SiteDeployScriptController::class)
     ->name('sites.deploy-script');
+
+Route::middleware('signed')->get('sites/{site}/redeploy-script', SiteRedeployScriptController::class)
+    ->name('sites.redeploy-script');
 
 Route::middleware('signed')->post('sites/{site}/deploy-callback', SiteDeployCallbackController::class)
     ->name('sites.deploy-callback');

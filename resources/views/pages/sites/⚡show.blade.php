@@ -36,6 +36,13 @@ new #[Title('Site Details')] class extends Component
         return "wget --no-verbose -O - {$url} | bash";
     }
 
+    public function getRedeployScriptCommandProperty(): string
+    {
+        $url = URL::signedRoute('sites.redeploy-script', ['site' => $this->site]);
+
+        return "wget --no-verbose -O - {$url} | bash";
+    }
+
     public function markDeployed(): void
     {
         $this->authorize('update', [$this->team, $this->site]);
@@ -157,6 +164,32 @@ new #[Title('Site Details')] class extends Component
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
                 {{ __('Deployment completed successfully') }}
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+                <flux:heading size="lg" class="mb-4">{{ __('Redeploy Site') }}</flux:heading>
+                <flux:subheading class="mb-4">{{ __('SSH to your server as fuse and run this command to redeploy the site') }}</flux:subheading>
+
+                <div class="relative">
+                    <flux:input
+                        :value="$this->redeployScriptCommand"
+                        readonly
+                        class="font-mono text-sm"
+                    />
+                    <flux:button
+                        x-data="{ copied: false }"
+                        @click="
+                            navigator.clipboard.writeText({{ $this->redeployScriptCommand }});
+                            copied = true;
+                            setTimeout(() => copied = false, 2000);
+                        "
+                        size="sm"
+                        variant="ghost"
+                        class="absolute right-2 top-1/2 -translate-y-1/2"
+                    >
+                        <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
+                    </flux:button>
+                </div>
             </div>
         </div>
         @endif

@@ -208,13 +208,6 @@ service mysql restart
 
 echo "Install Valkey (Redis compatible)"
 waitForAptUnlock
-curl -fsSL https://packages.valkey.io/gpg -o /tmp/valkey-gpg.key
-gpg --dearmor -o /usr/share/keyrings/valkey-archive-keyring.gpg /tmp/valkey-gpg.key
-rm /tmp/valkey-gpg.key
-echo "deb [signed-by=/usr/share/keyrings/valkey-archive-keyring.gpg] https://packages.valkey.io/valkey/debian \$(lsb_release -cs) main" > /etc/apt/sources.list.d/valkey.list
-waitForAptUnlock
-apt-get update
-waitForAptUnlock
 apt-get install -y valkey-server
 sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/valkey/valkey.conf
 systemctl enable valkey-server

@@ -168,8 +168,33 @@ test('full provision script includes valkey installation', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Install Valkey (Redis compatible)"');
-    expect($content)->toContain('https://packages.valkey.io/gpg');
     expect($content)->toContain('apt-get install -y valkey-server');
+});
+
+test('full provision script installs valkey from distro repos without external gpg keys', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Install Valkey (Redis compatible)"');
+    expect($content)->toContain('apt-get install -y valkey-server');
+
+    expect($content)->not->toContain('packages.valkey.io');
+    expect($content)->not->toContain('valkey-gpg.key');
+    expect($content)->not->toContain('valkey-archive-keyring');
 });
 
 test('full provision script includes php installation', function () {
@@ -415,7 +440,6 @@ test('full provision script avoids shell pipes for external downloads', function
     expect($content)->not->toContain('| php -- --2');
     expect($content)->not->toContain('| bash -');
     expect($content)->toContain('-o /tmp/caddy-gpg.key');
-    expect($content)->toContain('-o /tmp/valkey-gpg.key');
     expect($content)->toContain('-o /tmp/composer-installer');
     expect($content)->toContain('-o /tmp/nodesource-setup.sh');
 });

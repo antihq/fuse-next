@@ -18,8 +18,18 @@ class ServerProvisionScriptController extends Controller
         $callbackUrl = URL::signedRoute('servers.provision-callback', ['server' => $server]);
 
         $script = <<<SHELL
-set -eu
+set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
+
+REPORT_URL='{$callbackUrl}'
+
+reportError() {
+    echo "Provisioning failed: \$1"
+    curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"error":"'"\$1"'"}' || true
+    exit 1
+}
+
+trap 'reportError "Script failed at line \$LINENO"' ERR
 
 echo "Setup SSH keys for root"
 
@@ -41,7 +51,7 @@ chmod 600 /root/.ssh/authorized_keys
 echo "SSH key added successfully"
 
 echo "Notifying Fuse..."
-curl -s -X POST "{$callbackUrl}" || true
+curl -s -X POST "\$REPORT_URL" || true
 echo "Done!"
 SHELL;
 

@@ -345,3 +345,124 @@ test('full provision script generates random mysql password', function () {
 
     expect(strlen($password))->toBe(32);
 });
+
+test('full provision script configures firewall with force flag', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Configure firewall (UFW)"');
+    expect($content)->toContain('ufw --force enable');
+    expect($content)->not->toContain('yes | ufw enable');
+});
+
+test('full provision script uses force flags on apt upgrade', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Upgrade packages"');
+    expect($content)->toContain('apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y');
+});
+
+test('full provision script avoids shell pipes for external downloads', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->not->toContain('| gpg --dearmor');
+    expect($content)->not->toContain('| tee /etc/apt/sources.list.d');
+    expect($content)->not->toContain('| tee -a');
+    expect($content)->not->toContain('| php -- --2');
+    expect($content)->not->toContain('| bash -');
+    expect($content)->toContain('-o /tmp/caddy-gpg.key');
+    expect($content)->toContain('-o /tmp/valkey-gpg.key');
+    expect($content)->toContain('-o /tmp/composer-installer');
+    expect($content)->toContain('-o /tmp/nodesource-setup.sh');
+});
+
+test('full provision script connects to mysql without password for initial root user setup', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('service mysql start');
+    expect($content)->toContain('mysql --user="root" -e "ALTER USER \'root\'@\'localhost\' IDENTIFIED BY');
+    expect($content)->not->toContain('mysql --user="root" --password="$MYSQL_PASSWORD" -e "ALTER USER \'root\'@\'localhost\'');
+});
+
+test('full provision script includes error handling', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('REPORT_URL=');
+    expect($content)->toContain('reportError() {');
+    expect($content)->toContain('trap \'reportError "Script failed at line');
+    expect($content)->toContain('ERR');
+});

@@ -26,7 +26,7 @@ test('provision script can be retrieved with signed url', function () {
 
     $response->assertOk();
     $response->assertHeader('Content-Type', 'text/x-shellscript; charset=utf-8');
-    $response->assertSee('set -eu');
+    $response->assertSee('set -euo pipefail');
     $response->assertSee('Setup SSH keys for root');
     $response->assertSee('mkdir -p /root/.ssh');
     $response->assertSee('chmod 700 /root/.ssh');
@@ -152,4 +152,28 @@ test('provision script includes callback url', function () {
     expect($content)->toContain('echo "Notifying Fuse..."');
     expect($content)->toContain('curl -s -X POST');
     expect($content)->toContain($callbackUrl);
+});
+
+test('provision script includes error handling', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('REPORT_URL=');
+    expect($content)->toContain('reportError() {');
+    expect($content)->toContain('trap \'reportError "Script failed at line');
+    expect($content)->toContain('ERR');
 });

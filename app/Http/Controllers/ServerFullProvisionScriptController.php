@@ -70,7 +70,7 @@ echo "Configure firewall (UFW)"
 ufw allow 22
 ufw allow 80
 ufw allow 443
-yes | ufw enable
+ufw --force enable
 service ufw restart
 
 echo "Update package repositories"
@@ -79,7 +79,7 @@ apt-get update -y
 
 echo "Upgrade packages"
 waitForAptUnlock
-apt-get upgrade -y
+apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y
 
 echo "Install essential packages"
 waitForAptUnlock
@@ -146,7 +146,7 @@ chmod 600 /root/.ssh/authorized_keys
 
 echo "Enhance SSH security"
 sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
-echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config
+echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 service ssh restart
 
 echo "Add known hosts for Git providers"
@@ -156,8 +156,11 @@ ssh-keyscan -H gitlab.com >> /root/.ssh/known_hosts
 
 echo "Install Caddy 2 webserver"
 waitForAptUnlock
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' -o /tmp/caddy-gpg.key
+gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /tmp/caddy-gpg.key
+rm /tmp/caddy-gpg.key
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' -o /tmp/caddy-repo.list
+mv /tmp/caddy-repo.list /etc/apt/sources.list.d/caddy-stable.list
 waitForAptUnlock
 apt-get update
 waitForAptUnlock
@@ -194,7 +197,7 @@ else
 fi
 
 service mysql start
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '\$MYSQL_PASSWORD';"
+mysql --user="root" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '\$MYSQL_PASSWORD';"
 mysql --user="root" --password="\$MYSQL_PASSWORD" -e "CREATE USER 'fuse'@'%' IDENTIFIED BY '\$MYSQL_PASSWORD';"
 mysql --user="root" --password="\$MYSQL_PASSWORD" -e "CREATE USER 'fuse'@'localhost' IDENTIFIED BY '\$MYSQL_PASSWORD';"
 mysql --user="root" --password="\$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO 'fuse'@'%' WITH GRANT OPTION;"
@@ -205,7 +208,9 @@ service mysql restart
 
 echo "Install Valkey (Redis compatible)"
 waitForAptUnlock
-curl -fsSL https://packages.valkey.io/gpg | gpg --dearmor -o /usr/share/keyrings/valkey-archive-keyring.gpg
+curl -fsSL https://packages.valkey.io/gpg -o /tmp/valkey-gpg.key
+gpg --dearmor -o /usr/share/keyrings/valkey-archive-keyring.gpg /tmp/valkey-gpg.key
+rm /tmp/valkey-gpg.key
 echo "deb [signed-by=/usr/share/keyrings/valkey-archive-keyring.gpg] https://packages.valkey.io/valkey/debian \$(lsb_release -cs) main" > /etc/apt/sources.list.d/valkey.list
 waitForAptUnlock
 apt-get update
@@ -217,7 +222,7 @@ systemctl restart valkey-server
 
 echo "Install PHP 8.2, 8.3, 8.4, 8.5"
 waitForAptUnlock
-apt-add-repository ppa:ondrej/php -y
+apt-add-repository ppa:ondrej/php -y --enable
 apt-get update
 waitForAptUnlock
 
@@ -254,7 +259,7 @@ for version in 8.2 8.3 8.4 8.5; do
     sed -i "s/;listen\.group.*/listen.group = fuse/" /etc/php/\$version/fpm/pool.d/www.conf
     sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/\$version/fpm/pool.d/www.conf
 
-    service php\$version-fpm restart > /dev/null 2>&1
+    service php\$version-fpm restart > /dev/null 2>&1 || true
 done
 
 echo "Set PHP 8.5 as default"
@@ -262,13 +267,17 @@ update-alternatives --set php /usr/bin/php8.5
 update-alternatives --set phar /usr/bin/phar8.5
 
 echo "Install Composer 2"
-curl -sS https://getcomposer.org/installer | php -- --2
+curl -sS https://getcomposer.org/installer -o /tmp/composer-installer
+php /tmp/composer-installer --2
+rm /tmp/composer-installer
 mv composer.phar /usr/local/bin/composer
 chmod +x /usr/local/bin/composer
 
 echo "Install Node.js 22 LTS"
 waitForAptUnlock
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x -o /tmp/nodesource-setup.sh
+bash /tmp/nodesource-setup.sh
+rm /tmp/nodesource-setup.sh
 apt-get update
 waitForAptUnlock
 apt-get install -y nodejs

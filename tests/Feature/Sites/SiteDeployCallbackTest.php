@@ -213,3 +213,26 @@ test('deploy callback handles deploying status from failed', function () {
     $site->refresh();
     expect($site->status)->toBe(SiteStatus::Deploying);
 });
+
+test('deploy callback route bypasses csrf token requirement', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Pending,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-callback', ['site' => $site]);
+
+    $response = $this->post($url, ['status' => 'deploying']);
+
+    $response->assertOk();
+});

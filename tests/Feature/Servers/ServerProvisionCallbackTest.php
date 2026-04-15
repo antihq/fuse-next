@@ -193,3 +193,21 @@ test('provision callback from connected status does not dispatch test connectivi
 
     Queue::assertNothingPushed();
 });
+
+test('provision callback route bypasses csrf token requirement', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url);
+
+    $response->assertOk();
+});

@@ -490,3 +490,68 @@ test('full provision script includes error handling', function () {
     expect($content)->toContain('trap \'reportError "Script failed at line');
     expect($content)->toContain('ERR');
 });
+
+test('full provision script configures caddy to import sites', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Configure Caddy"');
+    expect($content)->toContain('import /etc/caddy/sites.caddy');
+    expect($content)->toContain('touch /etc/caddy/sites.caddy');
+});
+
+test('full provision script enables php fpm service', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('systemctl enable php$version-fpm');
+});
+
+test('full provision script sets sites caddy ownership to fuse', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('chown fuse:fuse /etc/caddy/sites.caddy');
+});

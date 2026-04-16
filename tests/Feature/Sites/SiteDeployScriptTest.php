@@ -306,6 +306,61 @@ test('deploy script generates app key', function () {
     expect($content)->toContain('php artisan key:generate --ansi');
 });
 
+test('deploy script creates sqlite database', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Create SQLite database"');
+    expect($content)->toContain('mkdir -p database');
+    expect($content)->toContain('touch database/database.sqlite');
+});
+
+test('deploy script runs database migrations', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Run database migrations"');
+    expect($content)->toContain('php artisan migrate --force');
+});
+
 test('deploy script copies env example', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -358,4 +413,171 @@ test('deploy script reloads caddy', function () {
 
     expect($content)->toContain('echo "Reload Caddy"');
     expect($content)->toContain('sudo service caddy reload');
+});
+
+test('deploy script sets production env', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Set APP_ENV=production and APP_DEBUG=false"');
+    expect($content)->toContain("sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env");
+    expect($content)->toContain("sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env");
+});
+
+test('deploy script builds frontend assets', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Build frontend assets"');
+    expect($content)->toContain('npm install && npm run build');
+});
+
+test('deploy script creates storage link', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Create storage link"');
+    expect($content)->toContain('php artisan storage:link');
+});
+
+test('deploy script caches laravel config', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Cache Laravel configuration"');
+    expect($content)->toContain('php artisan config:cache');
+    expect($content)->toContain('php artisan route:cache');
+    expect($content)->toContain('php artisan view:cache');
+});
+
+test('deploy script restarts php fpm', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Restart PHP-FPM"');
+    expect($content)->toContain('sudo service php8.5-fpm restart');
+});
+
+test('deploy script runs health check', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Run health check"');
+    expect($content)->toContain('curl -f https://$DOMAIN/up');
+    expect($content)->toContain('|| reportError "Health check failed"');
 });

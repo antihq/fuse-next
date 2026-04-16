@@ -173,11 +173,11 @@ cat > /etc/caddy/Caddyfile << 'CADDY_EOF'
     file_server
 }
 
-import /etc/caddy/Sites.caddy
+import /etc/caddy/sites.caddy
 CADDY_EOF
 
 mkdir -p /etc/caddy
-touch /etc/caddy/Sites.caddy
+touch /etc/caddy/sites.caddy
 
 echo "Install MySQL 8.0"
 waitForAptUnlock
@@ -252,6 +252,7 @@ for version in 8.2 8.3 8.4 8.5; do
     sed -i "s/;listen\.group.*/listen.group = fuse/" /etc/php/\$version/fpm/pool.d/www.conf
     sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/\$version/fpm/pool.d/www.conf
 
+    systemctl enable php\$version-fpm
     service php\$version-fpm restart > /dev/null 2>&1 || true
 done
 
@@ -300,6 +301,7 @@ cp /root/.ssh/known_hosts /home/fuse/.ssh/known_hosts
 ssh-keygen -t rsa -N '' -f /home/fuse/.ssh/id_rsa 2>/dev/null || true
 
 chown -R fuse:fuse /home/fuse
+chown fuse:fuse /etc/caddy/sites.caddy
 chmod -R 755 /home/fuse
 chmod 700 /home/fuse/.ssh
 chmod 600 /home/fuse/.ssh/authorized_keys

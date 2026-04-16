@@ -8,7 +8,6 @@ class SiteDeployScriptController extends Controller
 {
     public function __invoke(Site $site)
     {
-        $server = $site->server;
         $callbackUrl = url()->signedRoute('sites.deploy-callback', ['site' => $site]);
 
         $script = <<<SHELL
@@ -52,8 +51,30 @@ else
     echo "APP_KEY=" > .env
 fi
 
+echo "Set APP_ENV=production and APP_DEBUG=false"
+sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo "APP_ENV=production" >> .env
+sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo "APP_DEBUG=false" >> .env
+
 echo "Generate APP_KEY"
 php artisan key:generate --ansi
+
+echo "Create SQLite database"
+mkdir -p database
+touch database/database.sqlite
+
+echo "Run database migrations"
+php artisan migrate --force
+
+echo "Build frontend assets"
+npm install && npm run build
+
+echo "Create storage link"
+php artisan storage:link
+
+echo "Cache Laravel configuration"
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
 echo "Set directory permissions"
 chmod -R 775 storage bootstrap/cache
@@ -81,6 +102,12 @@ CADDY_EOF
 
 echo "Reload Caddy"
 sudo service caddy reload
+
+echo "Restart PHP-FPM"
+sudo service php8.5-fpm restart
+
+echo "Run health check"
+curl -f https://\$DOMAIN/up || reportError "Health check failed"
 
 echo "=== Deployment completed successfully ==="
 curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true

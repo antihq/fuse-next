@@ -333,3 +333,279 @@ test('redeploy script does not copy env example', function () {
     expect($content)->not->toContain('echo "Copy .env.example to .env"');
     expect($content)->not->toContain('cp .env.example .env');
 });
+
+test('redeploy script puts app in maintenance mode', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Put application in maintenance mode"');
+    expect($content)->toContain('php artisan down');
+});
+
+test('redeploy script builds frontend assets', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Build frontend assets"');
+    expect($content)->toContain('npm install && npm run build');
+});
+
+test('redeploy script runs migrations', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Run database migrations"');
+    expect($content)->toContain('php artisan migrate --force');
+});
+
+test('redeploy script creates storage link', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Create storage link"');
+    expect($content)->toContain('php artisan storage:link');
+});
+
+test('redeploy script caches laravel config', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Cache Laravel configuration"');
+    expect($content)->toContain('php artisan config:cache');
+    expect($content)->toContain('php artisan route:cache');
+    expect($content)->toContain('php artisan view:cache');
+});
+
+test('redeploy script restarts php fpm', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Restart PHP-FPM"');
+    expect($content)->toContain('sudo service php8.5-fpm restart');
+});
+
+test('redeploy script brings app back up', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Bring application back up"');
+    expect($content)->toContain('php artisan up');
+});
+
+test('redeploy script runs health check', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Run health check"');
+    expect($content)->toContain('curl -f https://$DOMAIN/up');
+    expect($content)->toContain('|| reportError "Health check failed"');
+});
+
+test('redeploy script does not set production env', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->not->toContain('echo "Set APP_ENV=production and APP_DEBUG=false"');
+    expect($content)->not->toContain("sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env");
+    expect($content)->not->toContain("sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env");
+});
+
+test('redeploy script does not create sqlite database', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->not->toContain('echo "Create SQLite database"');
+    expect($content)->not->toContain('mkdir -p database');
+    expect($content)->not->toContain('touch database/database.sqlite');
+});

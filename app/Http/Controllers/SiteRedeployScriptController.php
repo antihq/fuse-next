@@ -36,12 +36,38 @@ echo "Pulling latest changes from repository"
 cd "\$DEPLOY_DIR"
 git pull "\$REPOSITORY"
 
+echo "Put application in maintenance mode"
+php artisan down
+
 echo "Install Composer dependencies"
 composer install --optimize-autoloader --no-dev --no-interaction
+
+echo "Build frontend assets"
+npm install && npm run build
+
+echo "Run database migrations"
+php artisan migrate --force
+
+echo "Create storage link"
+php artisan storage:link
+
+echo "Cache Laravel configuration"
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
 echo "Set directory permissions"
 chmod -R 775 storage bootstrap/cache
 chown -R fuse:fuse storage bootstrap/cache
+
+echo "Restart PHP-FPM"
+sudo service php8.5-fpm restart
+
+echo "Bring application back up"
+php artisan up
+
+echo "Run health check"
+curl -f https://\$DOMAIN/up || reportError "Health check failed"
 
 echo "=== Redeployment completed successfully ==="
 curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true

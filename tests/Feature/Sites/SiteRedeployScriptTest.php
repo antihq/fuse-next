@@ -439,7 +439,7 @@ test('redeploy script creates storage link', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Create storage link"');
-    expect($content)->toContain('php artisan storage:link');
+    expect($content)->toContain('php artisan storage:link --force');
 });
 
 test('redeploy script caches laravel config', function () {
@@ -550,7 +550,7 @@ test('redeploy script runs health check', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Run health check"');
-    expect($content)->toContain('curl -f https://$DOMAIN/up');
+    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up');
     expect($content)->toContain('|| reportError "Health check failed"');
 });
 

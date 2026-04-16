@@ -49,7 +49,7 @@ echo "Run database migrations"
 php artisan migrate --force
 
 echo "Create storage link"
-php artisan storage:link
+php artisan storage:link --force
 
 echo "Cache Laravel configuration"
 php artisan config:cache
@@ -67,7 +67,7 @@ echo "Bring application back up"
 php artisan up
 
 echo "Run health check"
-curl -f https://\$DOMAIN/up || reportError "Health check failed"
+curl -sf -o /dev/null https://\$DOMAIN/up || reportError "Health check failed"
 
 echo "=== Redeployment completed successfully ==="
 curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true

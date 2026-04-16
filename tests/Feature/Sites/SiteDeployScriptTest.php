@@ -578,6 +578,6 @@ test('deploy script runs health check', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Run health check"');
-    expect($content)->toContain('curl -f https://$DOMAIN/up');
+    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up');
     expect($content)->toContain('|| reportError "Health check failed"');
 });

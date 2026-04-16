@@ -320,7 +320,7 @@ systemctl daemon-reload
 service caddy start
 
 echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service caddy reload" >> /etc/sudoers.d/caddy
-echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service php*-fpm reload" >> /etc/sudoers.d/php-fpm
+echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service php*-fpm restart" >> /etc/sudoers.d/php-fpm
 
 echo "Configure Supervisor"
 systemctl enable supervisor

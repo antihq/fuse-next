@@ -116,26 +116,12 @@ new #[Title('Site Details')] class extends Component
             <flux:heading size="lg" class="mb-4">{{ __('Deploy Site') }}</flux:heading>
             <flux:subheading class="mb-4">{{ __('SSH to your server as fuse and run this command to deploy the site') }}</flux:subheading>
 
-            <div class="mb-4 relative">
-                <flux:input
-                    :value="$this->deployScriptCommand"
-                    readonly
-                    class="font-mono text-sm"
-                />
-                <flux:button
-                    x-data="{ copied: false }"
-                    @click="
-                        navigator.clipboard.writeText({{ $this->deployScriptCommand }});
-                        copied = true;
-                        setTimeout(() => copied = false, 2000);
-                    "
-                    size="sm"
-                    variant="ghost"
-                    class="absolute right-2 top-1/2 -translate-y-1/2"
-                >
-                    <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
-                </flux:button>
-            </div>
+            <flux:input
+                :value="$this->deployScriptCommand"
+                readonly
+                copyable
+                class="font-mono text-sm mb-4"
+            />
         </div>
         @endif
 
@@ -170,26 +156,12 @@ new #[Title('Site Details')] class extends Component
                 <flux:heading size="lg" class="mb-4">{{ __('Redeploy Site') }}</flux:heading>
                 <flux:subheading class="mb-4">{{ __('SSH to your server as fuse and run this command to redeploy the site') }}</flux:subheading>
 
-                <div class="relative">
-                    <flux:input
-                        :value="$this->redeployScriptCommand"
-                        readonly
-                        class="font-mono text-sm"
-                    />
-                    <flux:button
-                        x-data="{ copied: false }"
-                        @click="
-                            navigator.clipboard.writeText({{ $this->redeployScriptCommand }});
-                            copied = true;
-                            setTimeout(() => copied = false, 2000);
-                        "
-                        size="sm"
-                        variant="ghost"
-                        class="absolute right-2 top-1/2 -translate-y-1/2"
-                    >
-                        <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
-                    </flux:button>
-                </div>
+                <flux:input
+                    :value="$this->redeployScriptCommand"
+                    readonly
+                    copyable
+                    class="font-mono text-sm"
+                />
             </div>
         </div>
         @endif

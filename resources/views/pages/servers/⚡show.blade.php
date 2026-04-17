@@ -121,26 +121,12 @@ new #[Title('Server Details')] class extends Component
                 <flux:heading size="lg" class="mb-4">{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
                 <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to authorize our SSH key') }}</flux:subheading>
 
-                <div class="mb-4 relative">
-                    <flux:input
-                        :value="$this->provisioningCommand"
-                        readonly
-                        class="font-mono text-sm"
-                    />
-                    <flux:button
-                        x-data="{ copied: false }"
-                        @click="
-                            navigator.clipboard.writeText({{ $this->provisioningCommand }});
-                            copied = true;
-                            setTimeout(() => copied = false, 2000);
-                        "
-                        size="sm"
-                        variant="ghost"
-                        class="absolute right-2 top-1/2 -translate-y-1/2"
-                    >
-                        <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
-                    </flux:button>
-                </div>
+                <flux:input
+                    :value="$this->provisioningCommand"
+                    readonly
+                    copyable
+                    class="font-mono text-sm mb-4"
+                />
 
                 <flux:button wire:click="testConnection" class="w-full">
                     <span wire:loading.remove>{{ __('Test Connection') }}</span>
@@ -154,26 +140,12 @@ new #[Title('Server Details')] class extends Component
                 <flux:heading size="lg" class="mb-4">{{ __('Step 2: Provision Server') }}</flux:heading>
                 <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to install Caddy, MySQL, Valkey, PHP, Composer, and Node.js') }}</flux:subheading>
 
-                <div class="mb-4 relative">
-                    <flux:input
-                        :value="$this->fullProvisioningCommand"
-                        readonly
-                        class="font-mono text-sm"
-                    />
-                    <flux:button
-                        x-data="{ copied: false }"
-                        @click="
-                            navigator.clipboard.writeText({{ $this->fullProvisioningCommand }});
-                            copied = true;
-                            setTimeout(() => copied = false, 2000);
-                        "
-                        size="sm"
-                        variant="ghost"
-                        class="absolute right-2 top-1/2 -translate-y-1/2"
-                    >
-                        <span x-text="copied ? '{{ __('Copied!') }}' : '{{ __('Copy') }}'"></span>
-                    </flux:button>
-                </div>
+                <flux:input
+                    :value="$this->fullProvisioningCommand"
+                    readonly
+                    copyable
+                    class="font-mono text-sm mb-4"
+                />
 
                 <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
                     {{ __('Provisioning completed? Mark as Provisioned') }}

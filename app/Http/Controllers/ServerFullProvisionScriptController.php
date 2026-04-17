@@ -307,6 +307,11 @@ chmod 700 /home/fuse/.ssh
 chmod 600 /home/fuse/.ssh/authorized_keys
 chmod 600 /home/fuse/.ssh/id_rsa
 
+echo "Start PHP-FPM services"
+for version in 8.2 8.3 8.4 8.5; do
+    service php\$version-fpm restart > /dev/null 2>&1 || true
+done
+
 echo "Update Caddy to run as fuse"
 service caddy stop
 mkdir -p /etc/systemd/system/caddy.service.d

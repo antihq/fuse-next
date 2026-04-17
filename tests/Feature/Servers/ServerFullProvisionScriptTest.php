@@ -555,3 +555,32 @@ test('full provision script sets sites caddy ownership to fuse', function () {
 
     expect($content)->toContain('chown fuse:fuse /etc/caddy/sites.caddy');
 });
+
+test('full provision script restarts php fpm services after creating fuse user', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Start PHP-FPM services"');
+    expect($content)->toContain('for version in 8.2 8.3 8.4 8.5');
+
+    $fuseUserCreationPos = strpos($content, 'echo "Create fuse user"');
+    $phpFpmRestartPos = strpos($content, 'echo "Start PHP-FPM services"');
+
+    expect($fuseUserCreationPos)->not->toBeFalse();
+    expect($phpFpmRestartPos)->not->toBeFalse();
+    expect($phpFpmRestartPos)->toBeGreaterThan($fuseUserCreationPos);
+});

@@ -107,7 +107,17 @@ echo "Restart PHP-FPM"
 sudo service php8.5-fpm restart
 
 echo "Run health check"
-curl -sf -o /dev/null https://\$DOMAIN/up || reportError "Health check failed"
+for i in \$(seq 1 30); do
+    if curl -sf -o /dev/null https://\$DOMAIN/up; then
+        echo "Health check passed"
+        break
+    fi
+    if [ \$i -eq 30 ]; then
+        reportError "Health check failed after 30 attempts"
+    fi
+    echo "Health check attempt \$i failed, retrying in 2s..."
+    sleep 2
+done
 
 echo "=== Deployment completed successfully ==="
 curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true

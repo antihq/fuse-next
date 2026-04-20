@@ -54,27 +54,18 @@ new #[Title('Servers')] class extends Component
                 </flux:button>
             </flux:modal.trigger>
 
-            <div class="mt-6 space-y-3">
+            <div class="mt-6">
             @forelse ($this->servers as $server)
-                <div class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900" data-test="server-row">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-medium">{{ $server->name }}</span>
-                            <flux:badge :color="$server->status->color()">{{ $server->status->label() }}</flux:badge>
-                        </div>
-                        <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $server->ip_address }}</flux:text>
-                    </div>
-
-                    <flux:tooltip :content="__('View server')">
-                        <flux:button
-                            variant="ghost"
-                            size="sm"
-                            icon="eye"
-                            :href="route('servers.show', ['current_team' => Auth::user()->currentTeam->slug, 'server' => $server->id])"
-                            wire:navigate
-                            data-test="server-view-button"
-                        />
-                    </flux:tooltip>
+                @if (!$loop->first)
+                    <flux:separator variant="subtle" />
+                @endif
+                <div class="flex items-center gap-2 py-3" data-test="server-row">
+                    <flux:text>
+                        <flux:link :href="route('servers.show', ['current_team' => Auth::user()->currentTeam->slug, 'server' => $server->id])" wire:navigate>
+                            {{ $server->ip_address }}
+                        </flux:link>
+                    </flux:text>
+                    <flux:badge :color="$server->status->color()" size="sm">{{ $server->status->label() }}</flux:badge>
                 </div>
             @empty
                 <flux:text class="py-8 text-center text-zinc-500 dark:text-zinc-400">

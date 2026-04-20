@@ -1,8 +1,6 @@
 <?php
 
-use App\Actions\Servers\CreateServer;
 use App\Models\Server;
-use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
@@ -10,29 +8,6 @@ use Livewire\Component;
 
 new #[Title('Servers')] class extends Component
 {
-    public string $ipAddress = '';
-
-    public function createServer(CreateServer $createServer): void
-    {
-        $team = Auth::user()->currentTeam;
-
-        $this->authorize('create', [Server::class, $team]);
-
-        $validated = $this->validate([
-            'ipAddress' => ['required', 'ip'],
-        ]);
-
-        $server = $createServer->handle($team, $validated['ipAddress']);
-
-        $this->dispatch('close-modal', name: 'add-server');
-
-        $this->reset('ipAddress');
-
-        Flux::toast(variant: 'success', text: __('Server added.'));
-
-        $this->redirectRoute('servers.show', ['current_team' => $team->slug, 'server' => $server->id], navigate: true);
-    }
-
     /**
      * @return Collection<int, Server>
      */
@@ -48,13 +23,17 @@ new #[Title('Servers')] class extends Component
 
 <div>
     <div class="max-w-xl mx-auto">
-    <flux:modal.trigger name="add-server" class="mt-5 w-full">
-                <flux:button icon="plus" x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-server')" data-test="servers-add-button" class="w-full">
-                    {{ __('Add server') }}
-                </flux:button>
-            </flux:modal.trigger>
+        <flux:button
+            :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
+            icon="plus"
+            class="mt-5 w-full"
+            data-test="servers-add-button"
+            wire:navigate
+        >
+            {{ __('Add server') }}
+        </flux:button>
 
-            <div class="mt-6">
+        <div class="mt-6">
             @forelse ($this->servers as $server)
                 @if (!$loop->first)
                     <flux:separator variant="subtle" />
@@ -74,25 +53,6 @@ new #[Title('Servers')] class extends Component
             @endforelse
         </div>
     </div>
-
-    <flux:modal name="add-server" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
-        <form wire:submit="createServer" class="space-y-6">
-            <flux:heading size="lg">{{ __('Add a new server') }}</flux:heading>
-            <flux:subheading>{{ __('Enter IP address of your VPS server.') }}</flux:subheading>
-
-            <flux:input wire:model="ipAddress" :label="__('IP address')" type="text" required autofocus data-test="add-server-ip" placeholder="192.168.1.1" />
-
-            <div class="flex justify-end space-x-2 rtl:space-x-reverse">
-                <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
-                </flux:modal.close>
-
-                <flux:button variant="primary" type="submit" data-test="add-server-submit">
-                    {{ __('Add server') }}
-                </flux:button>
-            </div>
-    </form>
-    </flux:modal>
 </div>
 
 

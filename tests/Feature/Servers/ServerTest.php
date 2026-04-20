@@ -18,9 +18,9 @@ test('servers can be created by owner', function () {
 
     $this->actingAs($owner);
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', '192.168.1.1')
-        ->call('createServer')
+        ->call('create')
         ->assertHasNoErrors()
         ->assertRedirect();
 
@@ -41,9 +41,9 @@ test('servers cannot be created by members', function () {
 
     $this->actingAs($member);
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', '192.168.1.1')
-        ->call('createServer')
+        ->call('create')
         ->assertForbidden();
 
     $this->assertDatabaseMissing('servers', [
@@ -59,9 +59,9 @@ test('server creation validates ip address is required', function () {
 
     $this->actingAs($user);
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', '')
-        ->call('createServer')
+        ->call('create')
         ->assertHasErrors(['ipAddress' => 'required']);
 
     $this->assertDatabaseMissing('servers');
@@ -75,9 +75,9 @@ test('server creation validates ip address format', function () {
 
     $this->actingAs($user);
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', 'not-a-valid-ip')
-        ->call('createServer')
+        ->call('create')
         ->assertHasErrors(['ipAddress' => 'ip']);
 
     $this->assertDatabaseMissing('servers');
@@ -91,14 +91,14 @@ test('server name auto-increments', function () {
 
     $this->actingAs($user);
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', '192.168.1.1')
-        ->call('createServer')
+        ->call('create')
         ->assertHasNoErrors();
 
-    Livewire::test('pages::servers.index')
+    Livewire::test('pages::servers.create')
         ->set('ipAddress', '192.168.1.2')
-        ->call('createServer')
+        ->call('create')
         ->assertHasNoErrors();
 
     $this->assertDatabaseHas('servers', [
@@ -106,6 +106,26 @@ test('server name auto-increments', function () {
         'ip_address' => '192.168.1.2',
         'name' => 'Server 2',
     ]);
+});
+
+test('server create page can be rendered', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.create', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('Add Server');
+});
+
+test('guests cannot access server create page', function () {
+    $response = $this->get(route('servers.create', ['current_team' => 'test-team']));
+
+    $response->assertRedirect(route('login'));
 });
 
 test('servers cannot be viewed by non team members', function () {

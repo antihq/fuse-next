@@ -37,6 +37,7 @@ Route::prefix('{current_team}')
     ->group(function () {
         Route::view('dashboard', 'dashboard')->name('dashboard');
         Route::livewire('servers', 'pages::servers.index')->name('servers.index');
+        Route::livewire('servers/create', 'pages::servers.create')->name('servers.create');
         Route::livewire('servers/{server}', 'pages::servers.show')->name('servers.show');
         Route::livewire('servers/{server}/sites', 'pages::sites.index')->name('sites.index');
         Route::livewire('servers/{server}/sites/create', 'pages::sites.create')->name('sites.create');

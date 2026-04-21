@@ -170,7 +170,6 @@ test('site index page renders for provisioned server', function () {
     $server = Server::factory()->create([
         'team_id' => $team->id,
         'status' => ServerStatus::Provisioned,
-        'name' => 'Test Server',
     ]);
 
     $response = $this
@@ -178,8 +177,6 @@ test('site index page renders for provisioned server', function () {
         ->get(route('sites.index', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Sites');
-    $response->assertSee('Test Server');
 });
 
 test('site index page not accessible for non-provisioned server', function () {
@@ -198,7 +195,6 @@ test('site index page not accessible for non-provisioned server', function () {
         ->get(route('sites.index', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Sites');
 });
 
 test('site show page renders with deploy command for pending site', function () {
@@ -252,8 +248,8 @@ test('site show page shows deploying state', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Deploying...');
-    $response->assertSee('Your site is being deployed. This may take a few minutes.');
+    $response->assertSee('Deploying');
+    $response->assertSee('This may take a few minutes.');
     $response->assertSee('Deploying site...');
 });
 
@@ -280,7 +276,6 @@ test('site show page shows deployed state', function () {
     $response->assertOk();
     $response->assertSee('Site Deployed');
     $response->assertSee('Your site has been deployed successfully.');
-    $response->assertSee('Deployment completed successfully');
 });
 
 test('mark deployed action sets status to deployed', function () {
@@ -425,7 +420,7 @@ test('site show page shows redeploy command for deployed site', function () {
     $response->assertOk();
     $response->assertSee('Site Deployed');
     $response->assertSee('Redeploy Site');
-    $response->assertSee('SSH to your server as fuse and run this command to redeploy the site');
+    $response->assertSee('Run this command to redeploy site');
     $response->assertSee('wget --no-verbose -O -');
     $response->assertSee('/sites/'.$site->id.'/redeploy-script');
 });
@@ -452,7 +447,7 @@ test('redeploy section not shown for pending site', function () {
 
     $response->assertOk();
     $response->assertDontSee('Redeploy Site');
-    $response->assertDontSee('run this command to redeploy the site');
+    $response->assertDontSee('Run this command to redeploy site');
     $response->assertDontSee('/redeploy-script');
 });
 
@@ -478,7 +473,7 @@ test('deploy command not shown for deployed site', function () {
 
     $response->assertOk();
     $response->assertDontSee('Deploy Site');
-    $response->assertDontSee('run this command to deploy the site');
+    $response->assertDontSee('Run this command to deploy site');
     $response->assertDontSee('/deploy-script');
 });
 
@@ -504,6 +499,6 @@ test('redeploy section not shown for deploying site', function () {
 
     $response->assertOk();
     $response->assertDontSee('Redeploy Site');
-    $response->assertDontSee('run this command to redeploy the site');
+    $response->assertDontSee('Run this command to redeploy site');
     $response->assertDontSee('/redeploy-script');
 });

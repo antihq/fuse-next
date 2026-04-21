@@ -67,111 +67,74 @@ new #[Title('Site Details')] class extends Component
     }
 }; ?>
 
-<section class="w-full" @if($this->shouldPoll) wire:poll.5s="refreshSite" @endif>
-    @include('partials.settings-heading')
-
-    <flux:heading class="sr-only">{{ __('Site Details') }}</flux:heading>
-
-    <div class="mb-6">
-        <flux:button
-            :href="route('sites.index', [$this->team->slug, $this->server])"
-            variant="ghost"
-            size="sm"
-            icon="arrow-left"
-            wire:navigate
-        >
-            {{ __('Back to sites') }}
-        </flux:button>
+<div class="max-w-xl mx-auto" @if($this->shouldPoll) wire:poll.5s="refreshSite" @endif>
+    <div class="py-3">
+        <div class="flex items-center gap-2">
+            <flux:heading>{{ $site->domain }}</flux:heading>
+            <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
+        </div>
+        <flux:subheading>{{ $site->repository }}</flux:subheading>
     </div>
 
-    <flux:heading>{{ $site->domain }}</flux:heading>
-    <flux:subheading>{{ $site->repository }}</flux:subheading>
+    @if($site->status === SiteStatus::Pending || $site->status === SiteStatus::Failed)
+        <flux:separator variant="subtle" />
 
-    <div class="mt-8 space-y-6">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Site Information') }}</flux:heading>
-
-            <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('Domain') }}</flux:text>
-                    <flux:text class="mt-1">{{ $site->domain }}</flux:text>
-                </div>
-
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('Repository') }}</flux:text>
-                    <flux:text class="mt-1">{{ $site->repository }}</flux:text>
-                </div>
-
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('Status') }}</flux:text>
-                    <div class="mt-1">
-                        <flux:badge :color="$site->status->color()">{{ $site->status->label() }}</flux:badge>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @if($site->status === SiteStatus::Pending || $site->status === SiteStatus::Failed)
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Deploy Site') }}</flux:heading>
-            <flux:subheading class="mb-4">{{ __('SSH to your server as fuse and run this command to deploy the site') }}</flux:subheading>
+        <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Deploy Site') }}</flux:heading>
+            <flux:subheading>{{ __('Run this command to deploy site') }}</flux:subheading>
 
             <flux:input
                 :value="$this->deployScriptCommand"
                 readonly
                 copyable
-                class="font-mono text-sm mb-4"
+                class="font-mono text-sm"
             />
         </div>
-        @endif
+    @endif
 
-        @if($site->status === SiteStatus::Deploying)
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Deploying...') }}</flux:heading>
-            <flux:subheading class="mb-4">{{ __('Your site is being deployed. This may take a few minutes.') }}</flux:subheading>
+    @if($site->status === SiteStatus::Deploying)
+        <flux:separator variant="subtle" />
 
-            <div class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+        <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Deploying') }}</flux:heading>
+            <flux:subheading>{{ __('This may take a few minutes.') }}</flux:subheading>
+
+            <flux:text wire:loading>
                 {{ __('Deploying site...') }}
-            </div>
+            </flux:text>
         </div>
-        @endif
+    @endif
 
-        @if($site->status === SiteStatus::Deployed)
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Site Deployed') }}</flux:heading>
-            <flux:subheading class="mb-4">{{ __('Your site has been deployed successfully.') }}</flux:subheading>
+    @if($site->status === SiteStatus::Deployed)
+        <flux:separator variant="subtle" />
 
-            <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-                {{ __('Deployment completed successfully') }}
-            </div>
-
-            <div class="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700">
-                <flux:heading size="lg" class="mb-4">{{ __('Redeploy Site') }}</flux:heading>
-                <flux:subheading class="mb-4">{{ __('SSH to your server as fuse and run this command to redeploy the site') }}</flux:subheading>
-
-                <flux:input
-                    :value="$this->redeployScriptCommand"
-                    readonly
-                    copyable
-                    class="font-mono text-sm"
-                />
-            </div>
+        <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Site Deployed') }}</flux:heading>
+            <flux:subheading>{{ __('Your site has been deployed successfully.') }}</flux:subheading>
         </div>
-        @endif
 
-        @if($site->status === SiteStatus::Pending || $site->status === SiteStatus::Deploying || $site->status === SiteStatus::Failed)
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Redeploy Site') }}</flux:heading>
+            <flux:subheading>{{ __('Run this command to redeploy site') }}</flux:subheading>
+
+            <flux:input
+                :value="$this->redeployScriptCommand"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
+        </div>
+    @endif
+
+    @if($site->status === SiteStatus::Pending || $site->status === SiteStatus::Deploying || $site->status === SiteStatus::Failed)
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
             <flux:button wire:click="markDeployed" variant="outline" class="w-full">
-                {{ __('Deployment completed? Mark as Deployed') }}
+                {{ __('Mark as Deployed') }}
             </flux:button>
         </div>
-        @endif
-    </div>
-</section>
+    @endif
+</div>

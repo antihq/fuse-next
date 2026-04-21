@@ -5,6 +5,8 @@ use App\Http\Controllers\ServerProvisionCallbackController;
 use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Controllers\SiteDeployCallbackController;
 use App\Http\Controllers\SiteDeployScriptController;
+use App\Http\Controllers\SiteDestroyCallbackController;
+use App\Http\Controllers\SiteDestroyScriptController;
 use App\Http\Controllers\SiteRedeployScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,12 @@ Route::middleware('signed')->get('sites/{site}/redeploy-script', SiteRedeployScr
 
 Route::middleware('signed')->post('sites/{site}/deploy-callback', SiteDeployCallbackController::class)
     ->name('sites.deploy-callback');
+
+Route::middleware('signed')->get('sites/{site}/destroy-script', SiteDestroyScriptController::class)
+    ->name('sites.destroy-script');
+
+Route::middleware('signed')->post('sites/{site}/destroy-callback', SiteDestroyCallbackController::class)
+    ->name('sites.destroy-callback');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])

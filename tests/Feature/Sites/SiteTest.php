@@ -502,3 +502,325 @@ test('redeploy section not shown for deploying site', function () {
     $response->assertDontSee('Run this command to redeploy site');
     $response->assertDontSee('/redeploy-script');
 });
+
+test('initiate delete sets status to deleting', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('initiateDelete');
+
+    $site->refresh();
+    expect($site->status)->toBe(SiteStatus::Deleting);
+});
+
+test('initiate delete is forbidden for members', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('initiateDelete')
+        ->assertForbidden();
+
+    $site->refresh();
+    expect($site->status)->toBe(SiteStatus::Deployed);
+});
+
+test('mark deleted deletes site from database and redirects', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('markDeleted')
+        ->assertRedirect(route('sites.index', [$team->slug, $server]));
+
+    $this->assertDatabaseMissing('sites', ['id' => $site->id]);
+});
+
+test('mark deleted is forbidden for members', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('markDeleted')
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('sites', ['id' => $site->id]);
+});
+
+test('delete button is visible for deployed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Delete Site');
+});
+
+test('delete button is visible for pending site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Pending,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Delete Site');
+});
+
+test('delete button is visible for failed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->failed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Delete Site');
+});
+
+test('delete button is not visible for deploying site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deploying()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Delete Site');
+});
+
+test('delete button is not visible for deleting site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Delete Site');
+});
+
+test('destroy command shown when site is deleting', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Remove Site');
+    $response->assertSee('Run this command on your server to remove the site');
+    $response->assertSee('Mark as Deleted');
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/sites/'.$site->id.'/destroy-script');
+});
+
+test('destroy command not shown when site is not deleting', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Remove Site');
+    $response->assertDontSee('Mark as Deleted');
+    $response->assertDontSee('/destroy-script');
+});
+
+test('polling is active when site is deleting', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site]);
+
+    $livewire->assertSet('shouldPoll', true);
+});
+
+test('refresh site updates to deleting status', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Pending,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site]);
+
+    $site->update(['status' => SiteStatus::Deleting]);
+
+    $livewire->call('refreshSite');
+
+    $livewire->assertSet('site.status', SiteStatus::Deleting);
+    $livewire->assertSet('shouldPoll', true);
+});

@@ -41,4 +41,11 @@ class SiteFactory extends Factory
             'status' => 'failed',
         ]);
     }
+
+    public function deleting(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'deleting',
+        ]);
+    }
 }

@@ -82,7 +82,7 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:heading size="lg">{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
+            <flux:heading>{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
             <flux:subheading>{{ __('SSH to your server as root and run this command') }}</flux:subheading>
 
             <flux:input
@@ -103,7 +103,7 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:heading size="lg">{{ __('Step 2: Provision Server') }}</flux:heading>
+            <flux:heading>{{ __('Step 2: Provision Server') }}</flux:heading>
             <flux:subheading>{{ __('Run this command to install dependencies') }}</flux:subheading>
 
             <flux:input
@@ -123,7 +123,7 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:heading size="lg">{{ __('Provisioning in Progress') }}</flux:heading>
+            <flux:heading>{{ __('Provisioning in Progress') }}</flux:heading>
             <flux:subheading>{{ __('This may take a few minutes.') }}</flux:subheading>
 
             <flux:text wire:loading>

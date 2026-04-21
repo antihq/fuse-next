@@ -138,37 +138,33 @@ new #[Title('Server Details')] class extends Component
     @if($server->status === ServerStatus::Provisioned)
         <flux:separator variant="subtle" />
 
-        <div class="py-3 space-y-3">
-            <div class="flex items-center justify-between">
-            <flux:heading>{{ __('Sites') }}</flux:heading>
-            </div>
+        <flux:navbar class="-mb-px">
+            <flux:navbar.item :href="route('servers.show', [$this->team->slug, $this->server])" current wire:navigate>
+                {{ __('Sites') }}
+            </flux:navbar.item>
+        </flux:navbar>
 
-            <div class="space-y-2">
-                @if($server->sites->isEmpty())
-                    <flux:text>{{ __('No sites configured yet.') }}</flux:text>
-                @else
-                    @foreach($server->sites as $site)
-                        <div class="flex items-center justify-between py-2" wire:key="{{ $site->id }}">
-                            <div class="flex items-center gap-2">
-                                <flux:text>
-                                    <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
-                                        {{ $site->domain }}
-                                    </flux:link>
-                                </flux:text>
-                                <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
-                            </div>
-                        </div>
-                    @endforeach
-                @endif
-            </div>
+        <div class="py-3 space-y-2">
+            @foreach($server->sites as $site)
+                <div class="flex items-center justify-between py-2" wire:key="{{ $site->id }}">
+                    <div class="flex items-center gap-2">
+                        <flux:text>
+                            <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
+                                {{ $site->domain }}
+                            </flux:link>
+                        </flux:text>
+                        <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
+                    </div>
+                </div>
+            @endforeach
 
             <flux:button
-                :href="route('sites.index', [$this->team->slug, $this->server])"
+                :href="route('sites.create', [$this->team->slug, $this->server])"
                 variant="outline"
                 class="w-full"
                 wire:navigate
             >
-                {{ __('Manage sites') }}
+                {{ __('Add site') }}
             </flux:button>
         </div>
     @endif

@@ -31,7 +31,7 @@ new #[Title('Add Server')] class extends Component
     }
 }; ?>
 
-<div class="max-w-xl mx-auto">
+<form wire:submit="create" class="max-w-xl mx-auto">
     <flux:input
         label="{{ __('IP Address') }}"
         wire:model="ipAddress"
@@ -43,8 +43,8 @@ new #[Title('Add Server')] class extends Component
 
 <div class="mt-4 flex">
     <flux:spacer />
-    <flux:button wire:click="create" variant="primary" data-test="add-server-submit">
+    <flux:button type="submit" variant="primary" data-test="add-server-submit">
         {{ __('Add server') }}
     </flux:button>
 </div>
-</div>
+</form>

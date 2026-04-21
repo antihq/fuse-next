@@ -51,7 +51,7 @@ new #[Title('Add Site')] class extends Component
     }
 }; ?>
 
-<div class="max-w-xl mx-auto">
+<form wire:submit="create" class="max-w-xl mx-auto">
     <flux:input
         label="{{ __('Domain') }}"
         wire:model="domain"
@@ -73,8 +73,8 @@ new #[Title('Add Site')] class extends Component
 
     <div class="mt-4 flex">
         <flux:spacer />
-        <flux:button wire:click="create" variant="primary" data-test="add-site-submit">
+        <flux:button type="submit" variant="primary" data-test="add-site-submit">
             {{ __('Add site') }}
         </flux:button>
     </div>
-</div>
+</form>

@@ -144,6 +144,8 @@ new #[Title('Server Details')] class extends Component
             </flux:navbar.item>
         </flux:navbar>
 
+        <flux:separator variant="subtle" />
+
         <div class="py-3 space-y-2">
             @foreach($server->sites as $site)
                 <div class="flex items-center justify-between py-2" wire:key="{{ $site->id }}">

@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\ServerStatus;
-use App\Jobs\TestServerConnectivity;
 use App\Models\Server;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -50,17 +49,18 @@ new #[Title('Server Details')] class extends Component
         return Auth::user()->currentTeam;
     }
 
-    public function testConnection(): void
-    {
-        $this->server->status = ServerStatus::Provisioning;
-        $this->server->save();
-
-        TestServerConnectivity::dispatch($this->server);
-    }
-
     public function getShouldPollProperty(): bool
     {
-        return $this->server->status === ServerStatus::Provisioning;
+        return $this->server->status === ServerStatus::Pending
+            || $this->server->status === ServerStatus::Provisioning;
+    }
+
+    public function markConnected(): void
+    {
+        $this->authorize('update', [$this->team, $this->server]);
+
+        $this->server->status = ServerStatus::Connected;
+        $this->server->save();
     }
 
     public function markProvisioned(): void
@@ -92,9 +92,8 @@ new #[Title('Server Details')] class extends Component
                 class="font-mono text-sm"
             />
 
-            <flux:button wire:click="testConnection" class="w-full">
-                <span wire:loading.remove>{{ __('Test Connection') }}</span>
-                <span wire:loading>{{ __('Testing...') }}</span>
+            <flux:button wire:click="markConnected" variant="outline" class="w-full">
+                {{ __('Mark as Connected') }}
             </flux:button>
         </div>
     @endif

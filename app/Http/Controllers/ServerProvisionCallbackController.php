@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ServerStatus;
-use App\Jobs\TestServerConnectivity;
 use App\Models\Server;
 use Illuminate\Http\Request;
 
@@ -29,14 +28,15 @@ class ServerProvisionCallbackController extends Controller
             return response()->json(['status' => 'provisioned']);
         }
 
-        $previousStatus = $server->status;
+        if ($server->status === ServerStatus::Pending || $server->status === ServerStatus::Failed) {
+            $server->status = ServerStatus::Connected;
+            $server->save();
+
+            return response()->json(['status' => 'connected']);
+        }
 
         $server->status = ServerStatus::Provisioning;
         $server->save();
-
-        if ($previousStatus === ServerStatus::Pending || $previousStatus === ServerStatus::Failed) {
-            TestServerConnectivity::dispatch($server);
-        }
 
         return response()->json(['status' => 'provisioning']);
     }

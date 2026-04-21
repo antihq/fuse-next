@@ -2,11 +2,9 @@
 
 use App\Enums\ServerStatus;
 use App\Enums\TeamRole;
-use App\Jobs\TestServerConnectivity;
 use App\Models\Server;
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 test('servers can be created by owner', function () {
@@ -210,49 +208,6 @@ test('server show page provisioning command contains signature', function () {
     $response->assertSee('signature=');
 });
 
-test('test connection button dispatches job', function () {
-    Queue::fake();
-
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Pending,
-    ]);
-
-    Livewire::actingAs($user)
-        ->test('pages::servers.show', ['server' => $server])
-        ->call('testConnection');
-
-    $server->refresh();
-    expect($server->status)->toBe(ServerStatus::Provisioning);
-
-    Queue::assertPushed(TestServerConnectivity::class, fn ($job) => $job->server->id === $server->id);
-});
-
-test('test connection button only visible when pending', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $provisionedServer = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $provisionedServer->id]));
-
-    $response->assertOk();
-    $response->assertDontSee('Test Connection');
-    $response->assertDontSee('Provisioning Command');
-});
-
 test('provisioning section hidden when server is provisioned', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -429,6 +384,65 @@ test('mark provisioned action is forbidden for non owners', function () {
     expect($server->status)->toBe(ServerStatus::Provisioning);
 });
 
+test('mark connected action sets status to connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markConnected');
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Connected);
+});
+
+test('mark connected action is forbidden for non owners', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markConnected')
+        ->assertForbidden();
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Pending);
+});
+
+test('polling is active when server is pending', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $livewire->assertSet('shouldPoll', true);
+});
+
 test('polling is active when server is provisioning', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -512,6 +526,61 @@ test('server cannot be deleted by user from another team', function () {
         ->assertForbidden();
 
     $this->assertDatabaseHas('servers', ['id' => $server->id]);
+});
+
+test('server show page shows mark as connected button when pending', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Mark as Connected');
+});
+
+test('step 1 section hidden when server is connected', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->connected()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Step 1: Authorize SSH Key');
+    $response->assertDontSee('SSH to your server as root');
+});
+
+test('polling is not active when server is provisioned', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $livewire->assertSet('shouldPoll', false);
 });
 
 test('polling is not active when server is connected', function () {

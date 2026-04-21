@@ -13,6 +13,7 @@ new #[Title('Servers')] class extends Component
         $server = Server::findOrFail($serverId);
         $this->authorize('delete', [Server::class, Auth::user()->currentTeam, $server]);
         $server->delete();
+        Flux::toast(variant: 'success', text: __('Server deleted. You can now remove it from your VPS provider.'));
     }
 
     /**

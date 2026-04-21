@@ -169,7 +169,6 @@ test('server show page can be rendered', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Test Server');
     $response->assertSee('192.168.1.100');
 });
 
@@ -312,7 +311,7 @@ test('server show page shows step 2 provisioning when connected', function () {
 
     $response->assertOk();
     $response->assertSee('Step 2: Provision Server');
-    $response->assertSee('SSH to your server as root and run this command to install Caddy, MySQL, Valkey, PHP, Composer, and Node.js');
+    $response->assertSee('Run this command to install dependencies');
 });
 
 test('server show page shows full provision command when connected', function () {
@@ -349,7 +348,7 @@ test('server show page shows mark as provisioned button when connected', functio
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Provisioning completed? Mark as Provisioned');
+    $response->assertSee('Mark as Provisioned');
 });
 
 test('server show page shows provisioning in progress when provisioning', function () {
@@ -368,7 +367,7 @@ test('server show page shows provisioning in progress when provisioning', functi
 
     $response->assertOk();
     $response->assertSee('Provisioning in Progress');
-    $response->assertSee('Your server is being provisioned. This may take a few minutes.');
+    $response->assertSee('This may take a few minutes.');
     $response->assertSee('Installing software...');
 });
 
@@ -387,7 +386,7 @@ test('server show page shows mark as provisioned button when provisioning', func
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Provisioning completed? Mark as Provisioned');
+    $response->assertSee('Mark as Provisioned');
 });
 
 test('mark provisioned action sets status to provisioned', function () {

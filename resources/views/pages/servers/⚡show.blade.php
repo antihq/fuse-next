@@ -72,147 +72,105 @@ new #[Title('Server Details')] class extends Component
     }
 }; ?>
 
-<section class="w-full" @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif>
-    @include('partials.settings-heading')
-
-    <flux:heading class="sr-only">{{ __('Server Details') }}</flux:heading>
-
-    <div class="mb-6">
-        <flux:button
-            :href="route('servers.index', [$this->team->slug])"
-            variant="ghost"
-            size="sm"
-            icon="arrow-left"
-            wire:navigate
-        >
-            {{ __('Back to servers') }}
-        </flux:button>
+<div class="max-w-xl mx-auto" @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif>
+    <div class="flex items-center gap-2 py-3">
+        <flux:heading>{{ $server->ip_address }}</flux:heading>
+        <flux:badge :color="$server->status->color()" size="sm">{{ $server->status->label() }}</flux:badge>
     </div>
 
-    <flux:heading>{{ $server->name }}</flux:heading>
-    <flux:subheading>{{ $server->ip_address }}</flux:subheading>
+    @if($server->status === ServerStatus::Pending)
+        <flux:separator variant="subtle" />
 
-    <div class="mt-8 space-y-6">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading size="lg" class="mb-4">{{ __('Server Information') }}</flux:heading>
+        <div class="py-3 space-y-3">
+            <flux:heading size="lg">{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
+            <flux:subheading>{{ __('SSH to your server as root and run this command') }}</flux:subheading>
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('Name') }}</flux:text>
-                    <flux:text class="mt-1">{{ $server->name }}</flux:text>
-                </div>
+            <flux:input
+                :value="$this->provisioningCommand"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
 
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('IP Address') }}</flux:text>
-                    <flux:text class="mt-1">{{ $server->ip_address }}</flux:text>
-                </div>
-
-                <div>
-                    <flux:text class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('Status') }}</flux:text>
-                    <div class="mt-1">
-                        <flux:badge :color="$server->status->color()">{{ $server->status->label() }}</flux:badge>
-                    </div>
-                </div>
-            </div>
+            <flux:button wire:click="testConnection" class="w-full">
+                <span wire:loading.remove>{{ __('Test Connection') }}</span>
+                <span wire:loading>{{ __('Testing...') }}</span>
+            </flux:button>
         </div>
+    @endif
 
-        @if($server->status === ServerStatus::Pending)
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:heading size="lg" class="mb-4">{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
-                <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to authorize our SSH key') }}</flux:subheading>
+    @if($server->status === ServerStatus::Connected)
+        <flux:separator variant="subtle" />
 
-                <flux:input
-                    :value="$this->provisioningCommand"
-                    readonly
-                    copyable
-                    class="font-mono text-sm mb-4"
-                />
+        <div class="py-3 space-y-3">
+            <flux:heading size="lg">{{ __('Step 2: Provision Server') }}</flux:heading>
+            <flux:subheading>{{ __('Run this command to install dependencies') }}</flux:subheading>
 
-                <flux:button wire:click="testConnection" class="w-full">
-                    <span wire:loading.remove>{{ __('Test Connection') }}</span>
-                    <span wire:loading>{{ __('Testing...') }}</span>
-                </flux:button>
+            <flux:input
+                :value="$this->fullProvisioningCommand"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
+
+            <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
+                {{ __('Mark as Provisioned') }}
+            </flux:button>
+        </div>
+    @endif
+
+    @if($server->status === ServerStatus::Provisioning)
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
+            <flux:heading size="lg">{{ __('Provisioning in Progress') }}</flux:heading>
+            <flux:subheading>{{ __('This may take a few minutes.') }}</flux:subheading>
+
+            <flux:text wire:loading>
+                {{ __('Installing software...') }}
+            </flux:text>
+
+            <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
+                {{ __('Mark as Provisioned') }}
+            </flux:button>
+        </div>
+    @endif
+
+    @if($server->status === ServerStatus::Provisioned)
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
+            <div class="flex items-center justify-between">
+            <flux:heading>{{ __('Sites') }}</flux:heading>
             </div>
-        @endif
 
-        @if($server->status === ServerStatus::Connected)
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:heading size="lg" class="mb-4">{{ __('Step 2: Provision Server') }}</flux:heading>
-                <flux:subheading class="mb-4">{{ __('SSH to your server as root and run this command to install Caddy, MySQL, Valkey, PHP, Composer, and Node.js') }}</flux:subheading>
-
-                <flux:input
-                    :value="$this->fullProvisioningCommand"
-                    readonly
-                    copyable
-                    class="font-mono text-sm mb-4"
-                />
-
-                <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
-                    {{ __('Provisioning completed? Mark as Provisioned') }}
-                </flux:button>
-            </div>
-        @endif
-
-        @if($server->status === ServerStatus::Provisioning)
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:heading size="lg" class="mb-4">{{ __('Provisioning in Progress') }}</flux:heading>
-                <flux:subheading class="mb-4">{{ __('Your server is being provisioned. This may take a few minutes.') }}</flux:subheading>
-
-                <div class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3.2.647z"></path>
-                    </svg>
-                    {{ __('Installing software...') }}
-                </div>
-
-                <flux:button wire:click="markProvisioned" variant="outline" class="w-full mt-4">
-                    {{ __('Provisioning completed? Mark as Provisioned') }}
-                </flux:button>
-            </div>
-        @endif
-
-        @if($server->status === ServerStatus::Provisioned)
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-                <div class="flex items-center justify-between mb-4">
-                    <flux:heading size="lg">{{ __('Sites') }}</flux:heading>
-                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $server->sites->count() }} {{ __('site(s)') }}</flux:text>
-                </div>
-
+            <div class="space-y-2">
                 @if($server->sites->isEmpty())
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{{ __('No sites configured yet.') }}</p>
+                    <flux:text>{{ __('No sites configured yet.') }}</flux:text>
                 @else
-                    <div class="space-y-2 mb-4">
-                        @foreach($server->sites as $site)
-                            <div class="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div class="flex items-center gap-3">
-                                    <div>
-                                        <flux:text class="font-medium">{{ $site->domain }}</flux:text>
-                                    </div>
-                                    <flux:badge :color="$site->status->color()">{{ $site->status->label() }}</flux:badge>
-                                </div>
-                                <flux:button
-                                    :href="route('sites.show', [$this->team->slug, $this->server, $site])"
-                                    variant="ghost"
-                                    size="sm"
-                                    wire:navigate
-                                >
-                                    {{ __('View') }}
-                                </flux:button>
+                    @foreach($server->sites as $site)
+                        <div class="flex items-center justify-between py-2" wire:key="{{ $site->id }}">
+                            <div class="flex items-center gap-2">
+                                <flux:text>
+                                    <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
+                                        {{ $site->domain }}
+                                    </flux:link>
+                                </flux:text>
+                                <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
                             </div>
-                        @endforeach
-                    </div>
+                        </div>
+                    @endforeach
                 @endif
-
-                <flux:button
-                    :href="route('sites.index', [$this->team->slug, $this->server])"
-                    variant="outline"
-                    class="w-full"
-                    wire:navigate
-                >
-                    {{ __('Manage sites') }}
-                </flux:button>
             </div>
-        @endif
-    </div>
-</section>
+
+            <flux:button
+                :href="route('sites.index', [$this->team->slug, $this->server])"
+                variant="outline"
+                class="w-full"
+                wire:navigate
+            >
+                {{ __('Manage sites') }}
+            </flux:button>
+        </div>
+    @endif
+</div>

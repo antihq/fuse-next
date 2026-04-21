@@ -8,6 +8,13 @@ use Livewire\Component;
 
 new #[Title('Servers')] class extends Component
 {
+    public function deleteServer(int $serverId): void
+    {
+        $server = Server::findOrFail($serverId);
+        $this->authorize('delete', [Server::class, Auth::user()->currentTeam, $server]);
+        $server->delete();
+    }
+
     /**
      * @return Collection<int, Server>
      */
@@ -26,7 +33,7 @@ new #[Title('Servers')] class extends Component
         <flux:button
             :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
             icon="plus"
-            class="mt-5 w-full"
+            class="w-full"
             data-test="servers-add-button"
             wire:navigate
         >
@@ -45,6 +52,23 @@ new #[Title('Servers')] class extends Component
                         </flux:link>
                     </flux:text>
                     <flux:badge :color="$server->status->color()" size="sm">{{ $server->status->label() }}</flux:badge>
+                    <div class="ml-auto">
+                        <flux:dropdown position="bottom" align="end">
+                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+                            <flux:menu>
+                                <flux:menu.item
+                                    icon="trash"
+                                    variant="danger"
+                                    as="button"
+                                    type="button"
+                                    wire:click="deleteServer({{ $server->id }})"
+                                    wire:confirm="{{ __('Are you sure you want to delete this server?') }}"
+                                >
+                                    {{ __('Delete server') }}
+                                </flux:menu.item>
+                            </flux:menu>
+                        </flux:dropdown>
+                    </div>
                 </div>
             @empty
                 <flux:text class="py-8 text-center text-zinc-500 dark:text-zinc-400">

@@ -445,6 +445,75 @@ test('polling is active when server is provisioning', function () {
     $livewire->assertSet('shouldPoll', true);
 });
 
+test('server can be deleted by owner', function () {
+    $owner = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $owner->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    Livewire::actingAs($owner)
+        ->test('pages::servers.index')
+        ->call('deleteServer', $server->id)
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseMissing('servers', ['id' => $server->id]);
+});
+
+test('server can be deleted by admin', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::servers.index')
+        ->call('deleteServer', $server->id)
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseMissing('servers', ['id' => $server->id]);
+});
+
+test('server cannot be deleted by member', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    Livewire::actingAs($member)
+        ->test('pages::servers.index')
+        ->call('deleteServer', $server->id)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('servers', ['id' => $server->id]);
+});
+
+test('server cannot be deleted by user from another team', function () {
+    $owner = User::factory()->create();
+    $otherOwner = User::factory()->create();
+    $team = Team::factory()->create();
+    $otherTeam = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $otherTeam->members()->attach($otherOwner, ['role' => TeamRole::Owner->value]);
+    $otherOwner->switchTeam($otherTeam);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    Livewire::actingAs($otherOwner)
+        ->test('pages::servers.index')
+        ->call('deleteServer', $server->id)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('servers', ['id' => $server->id]);
+});
+
 test('polling is not active when server is connected', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

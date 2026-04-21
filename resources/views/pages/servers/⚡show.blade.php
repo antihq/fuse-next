@@ -147,19 +147,6 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-2">
-            @foreach($server->sites as $site)
-                <div class="flex items-center justify-between py-2" wire:key="{{ $site->id }}">
-                    <div class="flex items-center gap-2">
-                        <flux:text>
-                            <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
-                                {{ $site->domain }}
-                            </flux:link>
-                        </flux:text>
-                        <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
-                    </div>
-                </div>
-            @endforeach
-
             <flux:button
                 :href="route('sites.create', [$this->team->slug, $this->server])"
                 variant="outline"
@@ -168,6 +155,20 @@ new #[Title('Server Details')] class extends Component
             >
                 {{ __('Add site') }}
             </flux:button>
+
+            @foreach($server->sites as $site)
+                @if (!$loop->first)
+                    <flux:separator variant="subtle" />
+                @endif
+                <div class="flex items-center gap-2 py-2" wire:key="{{ $site->id }}">
+                    <flux:text>
+                        <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
+                            {{ $site->domain }}
+                        </flux:link>
+                    </flux:text>
+                    <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
+                </div>
+            @endforeach
         </div>
     @endif
 </div>

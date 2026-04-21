@@ -101,44 +101,30 @@ new class extends Component {
 }; ?>
 
 <div>
-    <flux:dropdown position="bottom" align="start">
-        <flux:button variant="ghost" class="group w-full justify-start in-data-flux-sidebar-collapsed-desktop:justify-center" data-test="team-switcher-trigger">
-            <flux:icon name="users" class="hidden size-4 in-data-flux-sidebar-collapsed-desktop:block" />
-            <span class="truncate font-semibold in-data-flux-sidebar-collapsed-desktop:hidden">{{ $this->currentTeam()['name'] ?? __('Select team') }}</span>
-            <flux:icon
-                name="chevrons-up-down"
-                variant="micro"
-                class="ms-auto size-4 in-data-flux-sidebar-collapsed-desktop:hidden"
-            />
-        </flux:button>
+    <flux:menu.heading>{{ __('Teams') }}</flux:menu.heading>
 
-        <flux:menu class="min-w-56">
-            <flux:menu.heading>{{ __('Teams') }}</flux:menu.heading>
+    @foreach ($this->teams() as $team)
+        <flux:menu.item
+            wire:click="switchTeam('{{ $team->slug }}')"
+            class="cursor-pointer"
+            data-test="team-switcher-item"
+        >
+            <div class="flex w-full items-center justify-between">
+                <span>{{ $team->name }}</span>
+                @if ($team->isCurrent)
+                    <flux:icon name="check" class="size-4" />
+                @endif
+            </div>
+        </flux:menu.item>
+    @endforeach
 
-            @foreach ($this->teams() as $team)
-                <flux:menu.item
-                    wire:click="switchTeam('{{ $team->slug }}')"
-                    class="cursor-pointer"
-                    data-test="team-switcher-item"
-                >
-                    <div class="flex w-full items-center justify-between">
-                        <span>{{ $team->name }}</span>
-                        @if ($team->isCurrent)
-                            <flux:icon name="check" class="size-4" />
-                        @endif
-                    </div>
-                </flux:menu.item>
-            @endforeach
+    <flux:menu.separator />
 
-            <flux:menu.separator />
-
-            <flux:modal.trigger name="create-team-switcher">
-                <flux:menu.item icon="plus" class="cursor-pointer" data-test="team-switcher-new-team">
-                    {{ __('New team') }}
-                </flux:menu.item>
-            </flux:modal.trigger>
-        </flux:menu>
-    </flux:dropdown>
+    <flux:modal.trigger name="create-team-switcher">
+        <flux:menu.item icon="plus" class="cursor-pointer" data-test="team-switcher-new-team">
+            {{ __('New team') }}
+        </flux:menu.item>
+    </flux:modal.trigger>
 
     <flux:modal name="create-team-switcher" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
         <form wire:submit="createTeam" class="space-y-6">

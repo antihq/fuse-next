@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:header container class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden mr-2" icon="bars-2" inset="left" />
+    <body class="min-h-screen bg-white dark:bg-zinc-900 antialiased">
+        <flux:header class="border-b border-zinc-950/10 dark:border-white/10 bg-white dark:bg-zinc-900">
+            <flux:brand href="#" logo="/logo.svg" logo:dark="/dark-mode-logo.svg" />
 
-            <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
+            <flux:spacer />
 
-            <flux:navbar class="-mb-px max-lg:hidden">
+            <flux:navbar class="-mb-px">
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
@@ -20,35 +20,8 @@
 
             <flux:spacer />
 
-            <x-desktop-user-menu :showTeam="false" />
-
-            <div class="max-lg:hidden">
-                <livewire:team-switcher />
-            </div>
+            <x-desktop-user-menu :showTeam="true" />
         </flux:header>
-
-        <!-- Mobile Menu -->
-        <flux:sidebar collapsible="mobile" sticky class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
-                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
-            </flux:sidebar.header>
-
-            <livewire:team-switcher />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')">
-                    <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard')  }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="server" :href="route('servers.index')" :current="request()->routeIs('servers.*')" wire:navigate>
-                        {{ __('Servers') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-            </flux:sidebar.nav>
-
-            <flux:spacer />
-        </flux:sidebar>
 
         {{ $slot }}
 

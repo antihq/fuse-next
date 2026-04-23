@@ -10,14 +10,55 @@ class ServerFullProvisionScriptController extends Controller
 {
     public function __invoke(Server $server)
     {
-        $publicKey = config('services.server_ssh_public_key');
-
-        if (empty($publicKey)) {
-            abort(500, 'Server SSH public key is not configured.');
-        }
-
         $callbackUrl = URL::signedRoute('servers.provision-callback', ['server' => $server]);
         $mysqlPassword = Str::random(32);
+
+        $keys = $server->team->members()
+            ->with('sshKeys')
+            ->get()
+            ->pluck('sshKeys')
+            ->flatten();
+
+        $sshSetup = '';
+        $sshHardening = '';
+        $fuseKeyCopy = '';
+
+        if ($keys->isNotEmpty()) {
+            $keyLines = $keys->map(fn ($key) => $key->public_key)->implode("\n");
+
+            $sshSetup = <<<SHELL
+
+echo "Setup SSH keys for root"
+mkdir -p /root/.ssh
+touch /root/.ssh/authorized_keys
+
+cat << 'SSHKEY_EOF' >> /root/.ssh/authorized_keys
+{$keyLines}
+SSHKEY_EOF
+
+chown -R root:root /root/.ssh
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+SHELL;
+
+            $sshHardening = <<<SHELL
+
+echo "Enhance SSH security"
+sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
+echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
+service ssh restart
+SHELL;
+
+            $fuseKeyCopy = <<<SHELL
+
+cp /root/.ssh/authorized_keys /home/fuse/.ssh/authorized_keys
+
+echo "Add known hosts for Git providers"
+ssh-keyscan -H github.com >> /home/fuse/.ssh/known_hosts
+ssh-keyscan -H bitbucket.org >> /home/fuse/.ssh/known_hosts
+ssh-keyscan -H gitlab.com >> /home/fuse/.ssh/known_hosts
+SHELL;
+        }
 
         $script = <<<SHELL
 #!/bin/bash
@@ -131,28 +172,7 @@ APT::Periodic::Download-Upgradeable-Packages "1";
 APT::Periodic::AutocleanInterval "7";
 APT::Periodic::Unattended-Upgrade "1";
 EOF
-
-echo "Setup SSH keys for root"
-mkdir -p /root/.ssh
-touch /root/.ssh/authorized_keys
-
-cat << 'SSHKEY_EOF' >> /root/.ssh/authorized_keys
-{$publicKey}
-SSHKEY_EOF
-
-chown -R root:root /root/.ssh
-chmod 700 /root/.ssh
-chmod 600 /root/.ssh/authorized_keys
-
-echo "Enhance SSH security"
-sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
-echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
-service ssh restart
-
-echo "Add known hosts for Git providers"
-ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-ssh-keyscan -H bitbucket.org >> /root/.ssh/known_hosts
-ssh-keyscan -H gitlab.com >> /root/.ssh/known_hosts
+{$sshSetup}{$sshHardening}
 
 echo "Install Caddy 2 webserver"
 waitForAptUnlock
@@ -295,16 +315,14 @@ chsh -s /bin/bash fuse
 
 cp /root/.bashrc /home/fuse/.bashrc 2>/dev/null || true
 cp /root/.profile /home/fuse/.profile 2>/dev/null || true
-
-cp /root/.ssh/authorized_keys /home/fuse/.ssh/authorized_keys
-cp /root/.ssh/known_hosts /home/fuse/.ssh/known_hosts
+{$fuseKeyCopy}
 ssh-keygen -t rsa -N '' -f /home/fuse/.ssh/id_rsa 2>/dev/null || true
 
 chown -R fuse:fuse /home/fuse
 chown fuse:fuse /etc/caddy
 chmod -R 755 /home/fuse
 chmod 700 /home/fuse/.ssh
-chmod 600 /home/fuse/.ssh/authorized_keys
+chmod 600 /home/fuse/.ssh/authorized_keys 2>/dev/null || true
 chmod 600 /home/fuse/.ssh/id_rsa
 
 echo "Start PHP-FPM services"

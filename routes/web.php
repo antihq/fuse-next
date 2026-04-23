@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ServerFullProvisionScriptController;
 use App\Http\Controllers\ServerProvisionCallbackController;
-use App\Http\Controllers\ServerProvisionScriptController;
 use App\Http\Controllers\SiteDeployCallbackController;
 use App\Http\Controllers\SiteDeployScriptController;
 use App\Http\Controllers\SiteDestroyCallbackController;
@@ -15,9 +14,6 @@ use Laravel\Fortify\Features;
 Route::view('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
-
-Route::middleware('signed')->get('servers/{server}/provision-script', ServerProvisionScriptController::class)
-    ->name('servers.provision-script');
 
 Route::middleware('signed')->get('servers/{server}/full-provision-script', ServerFullProvisionScriptController::class)
     ->name('servers.full-provision-script');

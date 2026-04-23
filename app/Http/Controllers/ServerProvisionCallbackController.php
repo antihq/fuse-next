@@ -28,13 +28,6 @@ class ServerProvisionCallbackController extends Controller
             return response()->json(['status' => 'provisioned']);
         }
 
-        if ($server->status === ServerStatus::Pending || $server->status === ServerStatus::Failed) {
-            $server->status = ServerStatus::Connected;
-            $server->save();
-
-            return response()->json(['status' => 'connected']);
-        }
-
         $server->status = ServerStatus::Provisioning;
         $server->save();
 

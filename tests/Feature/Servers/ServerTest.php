@@ -3,6 +3,7 @@
 use App\Enums\ServerStatus;
 use App\Enums\TeamRole;
 use App\Models\Server;
+use App\Models\SshKey;
 use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
@@ -170,7 +171,7 @@ test('server show page can be rendered', function () {
     $response->assertSee('192.168.1.100');
 });
 
-test('server show page shows provisioning command', function () {
+test('server show page shows provision command when pending', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -187,7 +188,7 @@ test('server show page shows provisioning command', function () {
 
     $response->assertOk();
     $response->assertSee('wget --no-verbose -O -');
-    $response->assertSee('/servers/'.$server->id.'/provision-script');
+    $response->assertSee('/servers/'.$server->id.'/full-provision-script');
 });
 
 test('server show page provisioning command contains signature', function () {
@@ -224,7 +225,7 @@ test('provisioning section hidden when server is provisioned', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Provisioning Command');
+    $response->assertDontSee('Provision Server');
     $response->assertDontSee('SSH to your server as root');
 });
 
@@ -249,33 +250,13 @@ test('refresh server refreshes model status', function () {
     $livewire->assertSet('server.status', ServerStatus::Provisioned);
 });
 
-test('server show page shows step 2 provisioning when connected', function () {
+test('server show page shows ssh key warning when user has no keys', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $user->switchTeam($team);
 
-    $server = Server::factory()->connected()->create([
-        'team_id' => $team->id,
-        'ip_address' => '10.0.0.1',
-    ]);
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
-
-    $response->assertOk();
-    $response->assertSee('Step 2: Provision Server');
-    $response->assertSee('Run this command to install dependencies');
-});
-
-test('server show page shows full provision command when connected', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->connected()->create([
+    $server = Server::factory()->create([
         'team_id' => $team->id,
     ]);
 
@@ -284,17 +265,41 @@ test('server show page shows full provision command when connected', function ()
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('wget --no-verbose -O -');
-    $response->assertSee('/servers/'.$server->id.'/full-provision-script');
+    $response->assertSee('No SSH keys configured');
 });
 
-test('server show page shows mark as provisioned button when connected', function () {
+test('server show page shows team key names when team has keys', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $user->switchTeam($team);
 
-    $server = Server::factory()->connected()->create([
+    SshKey::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'MacBook Pro',
+    ]);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('SSH keys that will be authorized');
+    $response->assertSee('MacBook Pro');
+    $response->assertDontSee('No SSH keys configured');
+});
+
+test('server show page shows mark as provisioned button when pending', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
         'team_id' => $team->id,
     ]);
 
@@ -384,48 +389,6 @@ test('mark provisioned action is forbidden for non owners', function () {
     expect($server->status)->toBe(ServerStatus::Provisioning);
 });
 
-test('mark connected action sets status to connected', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Pending,
-    ]);
-
-    Livewire::actingAs($user)
-        ->test('pages::servers.show', ['server' => $server])
-        ->call('markConnected');
-
-    $server->refresh();
-    expect($server->status)->toBe(ServerStatus::Connected);
-});
-
-test('mark connected action is forbidden for non owners', function () {
-    $owner = User::factory()->create();
-    $member = User::factory()->create();
-    $team = Team::factory()->create();
-
-    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
-    $member->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Pending,
-    ]);
-
-    Livewire::actingAs($member)
-        ->test('pages::servers.show', ['server' => $server])
-        ->call('markConnected')
-        ->assertForbidden();
-
-    $server->refresh();
-    expect($server->status)->toBe(ServerStatus::Pending);
-});
-
 test('polling is active when server is pending', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -457,6 +420,23 @@ test('polling is active when server is provisioning', function () {
         ->test('pages::servers.show', ['server' => $server]);
 
     $livewire->assertSet('shouldPoll', true);
+});
+
+test('polling is not active when server is provisioned', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server]);
+
+    $livewire->assertSet('shouldPoll', false);
 });
 
 test('server can be deleted by owner', function () {
@@ -509,34 +489,53 @@ test('server cannot be deleted by member', function () {
     $this->assertDatabaseHas('servers', ['id' => $server->id]);
 });
 
-test('server cannot be deleted by user from another team', function () {
+test('server show page shows team keys without warning when user has no keys but teammates do', function () {
     $owner = User::factory()->create();
-    $otherOwner = User::factory()->create();
+    $member = User::factory()->create();
     $team = Team::factory()->create();
-    $otherTeam = Team::factory()->create();
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $otherTeam->members()->attach($otherOwner, ['role' => TeamRole::Owner->value]);
-    $otherOwner->switchTeam($otherTeam);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $owner->switchTeam($team);
+
+    SshKey::factory()->create(['user_id' => $member->id, 'name' => 'Member Laptop']);
 
     $server = Server::factory()->create(['team_id' => $team->id]);
 
-    Livewire::actingAs($otherOwner)
-        ->test('pages::servers.index')
-        ->call('deleteServer', $server->id)
-        ->assertForbidden();
+    $response = $this
+        ->actingAs($owner)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
-    $this->assertDatabaseHas('servers', ['id' => $server->id]);
+    $response->assertOk();
+    $response->assertSee('No SSH keys configured');
+    $response->assertSee('Member Laptop');
+    $response->assertSee('SSH keys that will be authorized');
 });
 
-test('server show page shows mark as connected button when pending', function () {
+test('admin can mark server as provisioned', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->provisioning()->create(['team_id' => $team->id]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markProvisioned');
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+});
+
+test('server show page renders with failed status', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $user->switchTeam($team);
 
-    $server = Server::factory()->create([
+    $server = Server::factory()->failed()->create([
         'team_id' => $team->id,
-        'status' => ServerStatus::Pending,
+        'ip_address' => '10.0.0.5',
     ]);
 
     $response = $this
@@ -544,52 +543,17 @@ test('server show page shows mark as connected button when pending', function ()
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Mark as Connected');
+    $response->assertSee('10.0.0.5');
+    $response->assertSee('Failed');
 });
 
-test('step 1 section hidden when server is connected', function () {
+test('polling is not active when server has failed', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $user->switchTeam($team);
 
-    $server = Server::factory()->connected()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
-
-    $response->assertOk();
-    $response->assertDontSee('Step 1: Authorize SSH Key');
-    $response->assertDontSee('SSH to your server as root');
-});
-
-test('polling is not active when server is provisioned', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $livewire = Livewire::actingAs($user)
-        ->test('pages::servers.show', ['server' => $server]);
-
-    $livewire->assertSet('shouldPoll', false);
-});
-
-test('polling is not active when server is connected', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->connected()->create([
+    $server = Server::factory()->failed()->create([
         'team_id' => $team->id,
     ]);
 

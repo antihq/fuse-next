@@ -4,6 +4,7 @@ use App\Enums\ServerStatus;
 use App\Models\Server;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -30,37 +31,41 @@ new #[Title('Server Details')] class extends Component
         $this->server->refresh();
     }
 
-    public function getProvisioningCommandProperty(): string
-    {
-        $url = URL::signedRoute('servers.provision-script', ['server' => $this->server]);
-
-        return "wget --no-verbose -O - {$url} | bash";
-    }
-
-    public function getFullProvisioningCommandProperty(): string
+    #[Computed]
+    public function provisioningCommand(): string
     {
         $url = URL::signedRoute('servers.full-provision-script', ['server' => $this->server]);
 
         return "wget --no-verbose -O - {$url} | bash";
     }
 
-    public function getTeamProperty()
+    #[Computed]
+    public function team()
     {
         return Auth::user()->currentTeam;
     }
 
-    public function getShouldPollProperty(): bool
+    #[Computed]
+    public function teamSshKeys()
+    {
+        return $this->team->members()
+            ->with('sshKeys')
+            ->get()
+            ->pluck('sshKeys')
+            ->flatten();
+    }
+
+    #[Computed]
+    public function userHasSshKeys(): bool
+    {
+        return Auth::user()->sshKeys()->exists();
+    }
+
+    #[Computed]
+    public function shouldPoll(): bool
     {
         return $this->server->status === ServerStatus::Pending
             || $this->server->status === ServerStatus::Provisioning;
-    }
-
-    public function markConnected(): void
-    {
-        $this->authorize('update', [$this->team, $this->server]);
-
-        $this->server->status = ServerStatus::Connected;
-        $this->server->save();
     }
 
     public function markProvisioned(): void
@@ -82,31 +87,30 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:heading>{{ __('Step 1: Authorize SSH Key') }}</flux:heading>
+            <flux:heading>{{ __('Provision Server') }}</flux:heading>
             <flux:subheading>{{ __('SSH to your server as root and run this command') }}</flux:subheading>
+
+            @if(! $this->userHasSshKeys)
+                <flux:callout color="amber">
+                    <flux:callout.heading>{{ __('No SSH keys configured') }}</flux:callout.heading>
+                    <flux:callout.text>
+                        {{ __('Add an SSH key so you can access this server after provisioning.') }}
+                        <flux:link :href="route('ssh-keys.index')" wire:navigate>{{ __('Add SSH Key') }}</flux:link>
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
+
+            @if($this->teamSshKeys->isNotEmpty())
+                <flux:callout color="blue">
+                    <flux:callout.heading>{{ __('SSH keys that will be authorized') }}</flux:callout.heading>
+                    <flux:callout.text>
+                        {{ $this->teamSshKeys->map(fn ($key) => $key->name)->join(', ') }}
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
 
             <flux:input
                 :value="$this->provisioningCommand"
-                readonly
-                copyable
-                class="font-mono text-sm"
-            />
-
-            <flux:button wire:click="markConnected" variant="outline" class="w-full">
-                {{ __('Mark as Connected') }}
-            </flux:button>
-        </div>
-    @endif
-
-    @if($server->status === ServerStatus::Connected)
-        <flux:separator variant="subtle" />
-
-        <div class="py-3 space-y-3">
-            <flux:heading>{{ __('Step 2: Provision Server') }}</flux:heading>
-            <flux:subheading>{{ __('Run this command to install dependencies') }}</flux:subheading>
-
-            <flux:input
-                :value="$this->fullProvisioningCommand"
                 readonly
                 copyable
                 class="font-mono text-sm"

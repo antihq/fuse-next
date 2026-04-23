@@ -134,6 +134,29 @@ test('destroy callback returns 400 for unknown status', function () {
     expect($site->status)->toBe(SiteStatus::Deleting);
 });
 
+test('destroy callback route bypasses csrf token requirement', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Deleting,
+    ]);
+
+    $url = URL::signedRoute('sites.destroy-callback', ['site' => $site]);
+
+    $response = $this->post($url, ['status' => 'destroyed']);
+
+    $response->assertOk();
+});
+
 test('destroy callback does not delete site on unknown status', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

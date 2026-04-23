@@ -301,7 +301,7 @@ cp /root/.ssh/known_hosts /home/fuse/.ssh/known_hosts
 ssh-keygen -t rsa -N '' -f /home/fuse/.ssh/id_rsa 2>/dev/null || true
 
 chown -R fuse:fuse /home/fuse
-chown fuse:fuse /etc/caddy/sites.caddy
+chown fuse:fuse /etc/caddy
 chmod -R 755 /home/fuse
 chmod 700 /home/fuse/.ssh
 chmod 600 /home/fuse/.ssh/authorized_keys

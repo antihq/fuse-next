@@ -535,7 +535,7 @@ test('full provision script enables php fpm service', function () {
     expect($content)->toContain('systemctl enable php$version-fpm');
 });
 
-test('full provision script sets sites caddy ownership to fuse', function () {
+test('full provision script sets caddy directory ownership to fuse', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -553,7 +553,7 @@ test('full provision script sets sites caddy ownership to fuse', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('chown fuse:fuse /etc/caddy/sites.caddy');
+    expect($content)->toContain('chown fuse:fuse /etc/caddy');
 });
 
 test('full provision script restarts php fpm services after creating fuse user', function () {

@@ -8,7 +8,8 @@ Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Route::livewire('settings/profile', 'pages::settings.profile')->name('profile.edit');
-    Route::livewire('settings/ssh-keys', 'pages::settings.ssh-keys')->name('ssh-keys.index');
+    Route::livewire('settings/ssh-keys', 'pages::ssh-keys.index')->name('ssh-keys.index');
+    Route::livewire('settings/ssh-keys/create', 'pages::ssh-keys.create')->name('ssh-keys.create');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

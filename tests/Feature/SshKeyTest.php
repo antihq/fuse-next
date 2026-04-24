@@ -8,10 +8,10 @@ test('user can add ssh key', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', 'MacBook Pro')
         ->set('public_key', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAb5M7vlstlBOPx6NocXAewxzfxX8AujDifR0lrQf+On fuse@example.com')
-        ->call('addKey')
+        ->call('create')
         ->assertHasNoErrors();
 
     $this->assertDatabaseHas('ssh_keys', [
@@ -25,10 +25,10 @@ test('ssh key fingerprint is auto generated on create', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', 'MacBook Pro')
         ->set('public_key', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAb5M7vlstlBOPx6NocXAewxzfxX8AujDifR0lrQf+On fuse@example.com')
-        ->call('addKey');
+        ->call('create');
 
     $key = SshKey::first();
     expect($key->fingerprint)->not->toBeNull();
@@ -39,10 +39,10 @@ test('ssh key name is required', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', '')
         ->set('public_key', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAb5M7vlstlBOPx6NocXAewxzfxX8AujDifR0lrQf+On fuse@example.com')
-        ->call('addKey')
+        ->call('create')
         ->assertHasErrors(['name' => 'required']);
 });
 
@@ -50,10 +50,10 @@ test('ssh key public key is required', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', 'MacBook Pro')
         ->set('public_key', '')
-        ->call('addKey')
+        ->call('create')
         ->assertHasErrors(['public_key' => 'required']);
 });
 
@@ -61,10 +61,10 @@ test('ssh key public key must start with ssh-', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', 'MacBook Pro')
         ->set('public_key', 'not-a-valid-key')
-        ->call('addKey')
+        ->call('create')
         ->assertHasErrors(['public_key' => 'starts_with']);
 });
 
@@ -73,7 +73,7 @@ test('user can delete their own ssh key', function () {
     $key = SshKey::factory()->create(['user_id' => $user->id]);
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.index')
         ->call('deleteKey', $key->id)
         ->assertHasNoErrors();
 
@@ -86,43 +86,57 @@ test('user cannot delete another users ssh key', function () {
     $key = SshKey::factory()->create(['user_id' => $otherUser->id]);
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.index')
         ->call('deleteKey', $key->id)
         ->assertForbidden();
 
     $this->assertDatabaseHas('ssh_keys', ['id' => $key->id]);
 });
 
-test('form is reset after adding key', function () {
+test('create page redirects to index after adding key', function () {
     $user = User::factory()->create();
 
-    $component = Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.create')
         ->set('name', 'MacBook Pro')
         ->set('public_key', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAb5M7vlstlBOPx6NocXAewxzfxX8AujDifR0lrQf+On fuse@example.com')
-        ->call('addKey');
-
-    $component->assertSet('name', '');
-    $component->assertSet('public_key', '');
+        ->call('create')
+        ->assertRedirect(route('ssh-keys.index'));
 });
 
-test('ssh keys page shows existing keys', function () {
+test('ssh keys index shows existing keys', function () {
     $user = User::factory()->create();
     SshKey::factory()->create(['user_id' => $user->id, 'name' => 'MacBook Pro']);
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.index')
         ->assertSee('MacBook Pro');
+});
+
+test('ssh keys index shows empty state when no keys', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertSee('No SSH keys yet.');
+});
+
+test('ssh keys index shows add ssh key button', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertSee('Add SSH Key');
 });
 
 test('fingerprint is invalid for malformed public key', function () {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
-        ->test('pages::settings.ssh-keys')
+        ->test('pages::ssh-keys.create')
         ->set('name', 'Bad Key')
         ->set('public_key', 'ssh-ed25519 not-valid-base64!!!')
-        ->call('addKey')
+        ->call('create')
         ->assertHasNoErrors();
 
     $key = SshKey::first();

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['server_id', 'domain', 'repository', 'status'])]
+#[Fillable(['server_id', 'domain', 'repository', 'status', 'mysql_database'])]
 class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */

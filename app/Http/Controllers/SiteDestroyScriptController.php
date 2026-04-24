@@ -10,6 +10,18 @@ class SiteDestroyScriptController extends Controller
     {
         $callbackUrl = url()->signedRoute('sites.destroy-callback', ['site' => $site]);
 
+        $mysqlCleanup = '';
+        $dbUser = 'site_' . $site->id;
+
+        if ($site->mysql_database) {
+            $mysqlCleanup = <<<SHELL
+
+echo "Drop MySQL database and user"
+mysql -e "DROP DATABASE IF EXISTS {$site->mysql_database};"
+mysql -e "DROP USER IF EXISTS '{$dbUser}'@'127.0.0.1';"
+SHELL;
+        }
+
         $script = <<<SHELL
 #!/bin/bash
 set -euo pipefail
@@ -44,7 +56,7 @@ sudo service caddy reload
 
 echo "Restart PHP-FPM"
 sudo service php8.5-fpm restart
-
+{$mysqlCleanup}
 echo "Remove deploy directory \$DEPLOY_DIR"
 if [ -d "\$DEPLOY_DIR" ]; then
     rm -rf "\$DEPLOY_DIR"

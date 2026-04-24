@@ -824,3 +824,80 @@ test('refresh site updates to deleting status', function () {
     $livewire->assertSet('site.status', SiteStatus::Deleting);
     $livewire->assertSet('shouldPoll', true);
 });
+
+test('site show page shows setup mysql section for deployed site without mysql database', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Setup MySQL Database');
+    $response->assertSee('Optionally switch from SQLite to MySQL');
+    $response->assertSee('setup-mysql-script');
+});
+
+test('site show page hides setup mysql section for deployed site with mysql database', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+        'mysql_database' => 'site_42',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Setup MySQL Database');
+    $response->assertDontSee('setup-mysql-script');
+});
+
+test('site show page setup mysql command contains signed url', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/sites/'.$site->id.'/setup-mysql-script');
+});

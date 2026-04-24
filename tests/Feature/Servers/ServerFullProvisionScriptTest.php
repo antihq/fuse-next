@@ -602,7 +602,7 @@ test('full provision script sets caddy directory ownership to fuse', function ()
 
     $content = $response->getContent();
 
-    expect($content)->toContain('chown fuse:fuse /etc/caddy');
+    expect($content)->toContain('chown -R fuse:fuse /etc/caddy');
 });
 
 test('full provision script restarts php fpm services after creating fuse user', function () {
@@ -739,4 +739,85 @@ test('full provision script does not include keys from users not on the team', f
 
     expect($content)->toContain($ownerKey);
     expect($content)->not->toContain($otherKey);
+});
+
+test('full provision script configures mysql client for fuse user', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Configure MySQL client for fuse user"');
+    expect($content)->toContain('/home/fuse/.my.cnf');
+    expect($content)->toContain('[client]');
+    expect($content)->toContain('user=fuse');
+    expect($content)->toContain('host=127.0.0.1');
+    expect($content)->toContain('echo "password=$MYSQL_PASSWORD" >> /home/fuse/.my.cnf');
+    expect($content)->toContain('chmod 600 /home/fuse/.my.cnf');
+});
+
+test('full provision script sets restrictive permissions on fuse my cnf', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    $myCnfWritePos = strpos($content, 'echo "Configure MySQL client for fuse user"');
+    $chmodMyCnfPos = strrpos($content, 'chmod 600 /home/fuse/.my.cnf');
+    $chmodRecursivePos = strpos($content, 'chmod -R 755 /home/fuse');
+
+    expect($myCnfWritePos)->not->toBeFalse();
+    expect($chmodMyCnfPos)->not->toBeFalse();
+    expect($chmodRecursivePos)->not->toBeFalse();
+    expect($chmodMyCnfPos)->toBeGreaterThan($chmodRecursivePos);
+});
+
+test('full provision script writes my cnf after mysql password is generated', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    $mysqlPasswordPos = strpos($content, "MYSQL_PASSWORD='");
+    $myCnfPos = strpos($content, 'echo "Configure MySQL client for fuse user"');
+
+    expect($mysqlPasswordPos)->not->toBeFalse();
+    expect($myCnfPos)->not->toBeFalse();
+    expect($myCnfPos)->toBeGreaterThan($mysqlPasswordPos);
 });

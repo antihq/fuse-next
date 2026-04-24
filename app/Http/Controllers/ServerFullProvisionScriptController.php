@@ -318,12 +318,22 @@ cp /root/.profile /home/fuse/.profile 2>/dev/null || true
 {$fuseKeyCopy}
 ssh-keygen -t rsa -N '' -f /home/fuse/.ssh/id_rsa 2>/dev/null || true
 
+echo "Configure MySQL client for fuse user"
+cat > /home/fuse/.my.cnf << 'MYCNF_EOF'
+[client]
+user=fuse
+host=127.0.0.1
+MYCNF_EOF
+echo "password=\$MYSQL_PASSWORD" >> /home/fuse/.my.cnf
+chmod 600 /home/fuse/.my.cnf
+
 chown -R fuse:fuse /home/fuse
-chown fuse:fuse /etc/caddy
+chown -R fuse:fuse /etc/caddy
 chmod -R 755 /home/fuse
 chmod 700 /home/fuse/.ssh
 chmod 600 /home/fuse/.ssh/authorized_keys 2>/dev/null || true
 chmod 600 /home/fuse/.ssh/id_rsa
+chmod 600 /home/fuse/.my.cnf
 
 echo "Start PHP-FPM services"
 for version in 8.2 8.3 8.4 8.5; do

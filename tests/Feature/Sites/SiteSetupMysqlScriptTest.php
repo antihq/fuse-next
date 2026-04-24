@@ -8,7 +8,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\URL;
 
-test('destroy script can be retrieved with signed url', function () {
+test('setup mysql script can be retrieved with signed url', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -22,9 +22,10 @@ test('destroy script can be retrieved with signed url', function () {
     $site = Site::factory()->create([
         'server_id' => $server->id,
         'domain' => 'example.com',
+        'status' => 'deployed',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -32,10 +33,10 @@ test('destroy script can be retrieved with signed url', function () {
     $response->assertHeader('Content-Type', 'text/x-shellscript; charset=utf-8');
     $response->assertSee('#!/bin/bash');
     $response->assertSee('set -euo pipefail');
-    $response->assertSee('Starting site removal');
+    $response->assertSee('Starting MySQL setup');
 });
 
-test('destroy script cannot be accessed without signature', function () {
+test('setup mysql script cannot be accessed without signature', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -50,14 +51,14 @@ test('destroy script cannot be accessed without signature', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = route('sites.destroy-script', ['site' => $site]);
+    $url = route('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
     $response->assertStatus(403);
 });
 
-test('destroy script rejects expired signature', function () {
+test('setup mysql script rejects expired signature', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -72,14 +73,14 @@ test('destroy script rejects expired signature', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = URL::temporarySignedRoute('sites.destroy-script', now()->subMinutes(5), ['site' => $site]);
+    $url = URL::temporarySignedRoute('sites.setup-mysql-script', now()->subMinutes(5), ['site' => $site]);
 
     $response = $this->get($url);
 
     $response->assertStatus(403);
 });
 
-test('destroy script includes site domain', function () {
+test('setup mysql script checks for my cnf existence', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -92,10 +93,9 @@ test('destroy script includes site domain', function () {
 
     $site = Site::factory()->create([
         'server_id' => $server->id,
-        'domain' => 'myapp.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -103,11 +103,11 @@ test('destroy script includes site domain', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain("DOMAIN='myapp.com'");
-    expect($content)->toContain('DEPLOY_DIR="/home/fuse/$DOMAIN"');
+    expect($content)->toContain('/home/fuse/.my.cnf');
+    expect($content)->toContain('MySQL not available on this server');
 });
 
-test('destroy script includes destroy callback url', function () {
+test('setup mysql script creates database named after site id', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -122,8 +122,7 @@ test('destroy script includes destroy callback url', function () {
         'server_id' => $server->id,
     ]);
 
-    $callbackUrl = URL::signedRoute('sites.destroy-callback', ['site' => $site]);
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -131,12 +130,12 @@ test('destroy script includes destroy callback url', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "=== Site removal completed successfully ==="');
-    expect($content)->toContain('{"status":"destroyed"}');
-    expect($content)->toContain($callbackUrl);
+    expect($content)->toContain('CREATE DATABASE IF NOT EXISTS $DB_NAME');
+    expect($content)->toContain('CREATE USER \'$DB_USER\'@\'127.0.0.1\'');
+    expect($content)->toContain('GRANT ALL PRIVILEGES ON $DB_NAME.*');
 });
 
-test('destroy script includes error handling', function () {
+test('setup mysql script generates random password for site database', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -151,7 +150,7 @@ test('destroy script includes error handling', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -159,12 +158,123 @@ test('destroy script includes error handling', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('reportError()');
-    expect($content)->toContain('Site removal failed');
+    expect($content)->toContain('openssl rand -hex 16');
+});
+
+test('setup mysql script updates env with mysql credentials', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'mysite.com',
+    ]);
+
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('DB_CONNECTION=mysql');
+    expect($content)->toContain('DB_HOST=127.0.0.1');
+    expect($content)->toContain('DB_PORT=3306');
+    expect($content)->toContain('DB_DATABASE=$DB_NAME');
+    expect($content)->toContain('DB_USERNAME=$DB_USER');
+    expect($content)->toContain('DB_PASSWORD=$DB_PASSWORD');
+});
+
+test('setup mysql script removes sqlite references from env', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('/^DB_SQLITE/d');
+    expect($content)->toContain('rm -f "$DEPLOY_DIR/database/database.sqlite"');
+});
+
+test('setup mysql script runs migrations against mysql', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('php artisan migrate --force');
+    expect($content)->toContain('php artisan config:cache');
+});
+
+test('setup mysql script includes error handling', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('reportError() {');
     expect($content)->toContain('trap \'reportError "Script failed at line $LINENO"\' ERR');
 });
 
-test('destroy script removes caddy config', function () {
+test('setup mysql script sends mysql database name in callback', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -177,10 +287,10 @@ test('destroy script removes caddy config', function () {
 
     $site = Site::factory()->create([
         'server_id' => $server->id,
-        'domain' => 'example.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $callbackUrl = URL::signedRoute('sites.deploy-callback', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -188,13 +298,11 @@ test('destroy script removes caddy config', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Remove Caddy configuration for $DOMAIN"');
-    expect($content)->toContain('CADDY_CONFIG="/etc/caddy/sites.caddy"');
-    expect($content)->toContain("sed -i '/^example.com {/,/^}/d'");
-    expect($content)->toContain('echo "Removed Caddy config block"');
+    expect($content)->toContain('"mysql_database":"$DB_NAME"');
+    expect($content)->toContain($callbackUrl);
 });
 
-test('destroy script removes deploy directory', function () {
+test('setup mysql script creates database with utf8mb4', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -209,7 +317,7 @@ test('destroy script removes deploy directory', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -217,12 +325,10 @@ test('destroy script removes deploy directory', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Remove deploy directory $DEPLOY_DIR"');
-    expect($content)->toContain('rm -rf "$DEPLOY_DIR"');
-    expect($content)->toContain('echo "Directory removed"');
+    expect($content)->toContain('CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
 });
 
-test('destroy script reloads caddy and restarts php fpm', function () {
+test('setup mysql script creates database before updating env', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -237,7 +343,7 @@ test('destroy script reloads caddy and restarts php fpm', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -245,13 +351,15 @@ test('destroy script reloads caddy and restarts php fpm', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Reload Caddy"');
-    expect($content)->toContain('sudo service caddy reload');
-    expect($content)->toContain('echo "Restart PHP-FPM"');
-    expect($content)->toContain('sudo service php8.5-fpm restart');
+    $createDbPos = strpos($content, 'CREATE DATABASE IF NOT EXISTS');
+    $updateEnvPos = strpos($content, 'Update .env with MySQL credentials');
+
+    expect($createDbPos)->not->toBeFalse();
+    expect($updateEnvPos)->not->toBeFalse();
+    expect($updateEnvPos)->toBeGreaterThan($createDbPos);
 });
 
-test('destroy script does not include deploy operations', function () {
+test('setup mysql script updates env before running migrations', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -266,7 +374,7 @@ test('destroy script does not include deploy operations', function () {
         'server_id' => $server->id,
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -274,15 +382,15 @@ test('destroy script does not include deploy operations', function () {
 
     $content = $response->getContent();
 
-    expect($content)->not->toContain('git clone');
-    expect($content)->not->toContain('composer install');
-    expect($content)->not->toContain('npm install');
-    expect($content)->not->toContain('php artisan key:generate');
-    expect($content)->not->toContain('php artisan migrate');
-    expect($content)->not->toContain('cat >> "$CADDY_CONFIG"');
+    $updateEnvPos = strpos($content, 'Update .env with MySQL credentials');
+    $migratePos = strpos($content, 'php artisan migrate --force');
+
+    expect($updateEnvPos)->not->toBeFalse();
+    expect($migratePos)->not->toBeFalse();
+    expect($migratePos)->toBeGreaterThan($updateEnvPos);
 });
 
-test('destroy script drops mysql database when site has one', function () {
+test('setup mysql script uses deploy directory based on site domain', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -295,10 +403,10 @@ test('destroy script drops mysql database when site has one', function () {
 
     $site = Site::factory()->create([
         'server_id' => $server->id,
-        'mysql_database' => 'site_42',
+        'domain' => 'myapp.example.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -306,67 +414,6 @@ test('destroy script drops mysql database when site has one', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Drop MySQL database and user"');
-    expect($content)->toContain('DROP DATABASE IF EXISTS site_42');
-    expect($content)->toContain("DROP USER IF EXISTS 'site_{$site->id}'@'127.0.0.1'");
-});
-
-test('destroy script does not include mysql cleanup when site has no database', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->not->toContain('DROP DATABASE');
-    expect($content)->not->toContain('DROP USER');
-    expect($content)->not->toContain('Drop MySQL');
-});
-
-test('destroy script drops mysql database before removing deploy directory', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-        'mysql_database' => 'site_42',
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    $dropDbPos = strpos($content, 'DROP DATABASE IF EXISTS');
-    $removeDirPos = strpos($content, 'Remove deploy directory');
-
-    expect($dropDbPos)->not->toBeFalse();
-    expect($removeDirPos)->not->toBeFalse();
-    expect($removeDirPos)->toBeGreaterThan($dropDbPos);
+    expect($content)->toContain("DOMAIN='myapp.example.com'");
+    expect($content)->toContain('DEPLOY_DIR="/home/fuse/$DOMAIN"');
 });

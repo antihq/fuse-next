@@ -7,6 +7,7 @@ use App\Http\Controllers\SiteDeployScriptController;
 use App\Http\Controllers\SiteDestroyCallbackController;
 use App\Http\Controllers\SiteDestroyScriptController;
 use App\Http\Controllers\SiteRedeployScriptController;
+use App\Http\Controllers\SiteSetupMysqlScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -26,6 +27,9 @@ Route::middleware('signed')->get('sites/{site}/deploy-script', SiteDeployScriptC
 
 Route::middleware('signed')->get('sites/{site}/redeploy-script', SiteRedeployScriptController::class)
     ->name('sites.redeploy-script');
+
+Route::middleware('signed')->get('sites/{site}/setup-mysql-script', SiteSetupMysqlScriptController::class)
+    ->name('sites.setup-mysql-script');
 
 Route::middleware('signed')->post('sites/{site}/deploy-callback', SiteDeployCallbackController::class)
     ->name('sites.deploy-callback');

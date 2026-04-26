@@ -50,13 +50,6 @@ new #[Title('Site Details')] class extends Component
         return "wget --no-verbose -O - {$url} | bash";
     }
 
-    public function getSetupMysqlScriptCommandProperty(): string
-    {
-        $url = URL::signedRoute('sites.setup-mysql-script', ['site' => $this->site]);
-
-        return "wget --no-verbose -O - {$url} | bash";
-    }
-
     public function markDeployed(): void
     {
         $this->authorize('update', [$this->team, $this->site]);
@@ -144,22 +137,6 @@ new #[Title('Site Details')] class extends Component
             <flux:heading>{{ __('Site Deployed') }}</flux:heading>
             <flux:subheading>{{ __('Your site has been deployed successfully.') }}</flux:subheading>
         </div>
-
-        @if(!$site->mysql_database)
-            <flux:separator variant="subtle" />
-
-            <div class="py-3 space-y-3">
-                <flux:heading>{{ __('Setup MySQL Database') }}</flux:heading>
-                <flux:subheading>{{ __('Optionally switch from SQLite to MySQL. This cannot be undone.') }}</flux:subheading>
-
-                <flux:input
-                    :value="$this->setupMysqlScriptCommand"
-                    readonly
-                    copyable
-                    class="font-mono text-sm"
-                />
-            </div>
-        @endif
 
         <flux:separator variant="subtle" />
 

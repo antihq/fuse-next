@@ -29,11 +29,6 @@ class SiteDeployCallbackController extends Controller
 
         if ($status === 'deployed') {
             $site->status = SiteStatus::Deployed;
-
-            if ($mysqlDatabase = $request->input('mysql_database')) {
-                $site->mysql_database = $mysqlDatabase;
-            }
-
             $site->save();
 
             return response()->json(['status' => 'deployed']);

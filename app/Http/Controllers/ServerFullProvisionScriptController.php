@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Server;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 
 class ServerFullProvisionScriptController extends Controller
 {
     public function __invoke(Server $server)
     {
         $callbackUrl = URL::signedRoute('servers.provision-callback', ['server' => $server]);
-        $mysqlPassword = Str::random(32);
 
         $keys = $server->team->members()
             ->with('sshKeys')
@@ -199,40 +197,6 @@ CADDY_EOF
 mkdir -p /etc/caddy
 touch /etc/caddy/sites.caddy
 
-echo "Install MySQL 8.0"
-waitForAptUnlock
-apt-get install -y mysql-server
-
-MYSQL_PASSWORD='{$mysqlPassword}'
-mkdir -p /root/.fuse
-echo "\$MYSQL_PASSWORD" > /root/.fuse/mysql_password
-chmod 600 /root/.fuse/mysql_password
-
-echo "default_password_lifetime = 0" >> /etc/mysql/mysql.conf.d/mysqld.cnf
-
-if grep -q "bind-address" /etc/mysql/mysql.conf.d/mysqld.cnf; then
-  sed -i '/^bind-address/s/bind-address.*=.*/bind-address = */' /etc/mysql/mysql.conf.d/mysqld.cnf
-else
-  echo "bind-address = *" >> /etc/mysql/mysql.conf.d/mysqld.cnf
-fi
-
-service mysql start
-mysql --user="root" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '\$MYSQL_PASSWORD';"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "CREATE USER 'fuse'@'%' IDENTIFIED BY '\$MYSQL_PASSWORD';"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "CREATE USER 'fuse'@'localhost' IDENTIFIED BY '\$MYSQL_PASSWORD';"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO 'fuse'@'%' WITH GRANT OPTION;"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO 'fuse'@'localhost' WITH GRANT OPTION;"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "CREATE DATABASE fuse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql --user="root" --password="\$MYSQL_PASSWORD" -e "FLUSH PRIVILEGES;"
-service mysql restart
-
-echo "Install Valkey (Redis compatible)"
-waitForAptUnlock
-apt-get install -y valkey-server
-sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/valkey/valkey.conf
-systemctl enable valkey-server
-systemctl restart valkey-server
-
 echo "Install PHP 8.2, 8.3, 8.4, 8.5"
 waitForAptUnlock
 apt-add-repository ppa:ondrej/php -y --enable
@@ -252,13 +216,11 @@ for version in 8.2 8.3 8.4 8.5; do
         php\$version-imagick \\
         php\$version-intl \\
         php\$version-mbstring \\
-        php\$version-mysql \\
         php\$version-readline \\
         php\$version-soap \\
         php\$version-sqlite3 \\
         php\$version-xml \\
-        php\$version-zip \\
-        php\$version-redis
+        php\$version-zip
 
     sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/\$version/fpm/php.ini
     sed -i "s/display_errors = .*/display_errors = Off/" /etc/php/\$version/fpm/php.ini
@@ -318,22 +280,12 @@ cp /root/.profile /home/fuse/.profile 2>/dev/null || true
 {$fuseKeyCopy}
 ssh-keygen -t rsa -N '' -f /home/fuse/.ssh/id_rsa 2>/dev/null || true
 
-echo "Configure MySQL client for fuse user"
-cat > /home/fuse/.my.cnf << 'MYCNF_EOF'
-[client]
-user=fuse
-host=127.0.0.1
-MYCNF_EOF
-echo "password=\$MYSQL_PASSWORD" >> /home/fuse/.my.cnf
-chmod 600 /home/fuse/.my.cnf
-
 chown -R fuse:fuse /home/fuse
 chown -R fuse:fuse /etc/caddy
 chmod -R 755 /home/fuse
 chmod 700 /home/fuse/.ssh
 chmod 600 /home/fuse/.ssh/authorized_keys 2>/dev/null || true
 chmod 600 /home/fuse/.ssh/id_rsa
-chmod 600 /home/fuse/.my.cnf
 
 echo "Start PHP-FPM services"
 for version in 8.2 8.3 8.4 8.5; do

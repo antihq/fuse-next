@@ -155,76 +155,6 @@ test('full provision script includes caddy installation', function () {
     expect($content)->toContain('apt-get install -y caddy=2.*');
 });
 
-test('full provision script includes mysql installation', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "Install MySQL 8.0"');
-    expect($content)->toContain('apt-get install -y mysql-server');
-    expect($content)->toContain('CREATE DATABASE fuse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-});
-
-test('full provision script includes valkey installation', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "Install Valkey (Redis compatible)"');
-    expect($content)->toContain('apt-get install -y valkey-server');
-});
-
-test('full provision script installs valkey from distro repos without external gpg keys', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "Install Valkey (Redis compatible)"');
-    expect($content)->toContain('apt-get install -y valkey-server');
-    expect($content)->not->toContain('packages.valkey.io');
-    expect($content)->not->toContain('valkey-gpg.key');
-    expect($content)->not->toContain('valkey-archive-keyring');
-});
-
 test('full provision script includes php installation', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -384,42 +314,6 @@ test('full provision script includes callback url', function () {
     expect($content)->toContain($callbackUrl);
 });
 
-test('full provision script generates random mysql password', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('MYSQL_PASSWORD=');
-
-    $passwordLine = null;
-    $lines = explode("\n", $content);
-    foreach ($lines as $line) {
-        if (str_starts_with($line, "MYSQL_PASSWORD='")) {
-            $passwordLine = $line;
-            break;
-        }
-    }
-
-    expect($passwordLine)->not->toBeNull();
-
-    $password = substr($passwordLine, strlen("MYSQL_PASSWORD='"), -1);
-
-    expect(strlen($password))->toBe(32);
-});
-
 test('full provision script configures firewall with force flag', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -491,29 +385,6 @@ test('full provision script avoids shell pipes for external downloads', function
     expect($content)->toContain('-o /tmp/caddy-gpg.key');
     expect($content)->toContain('-o /tmp/composer-installer');
     expect($content)->toContain('-o /tmp/nodesource-setup.sh');
-});
-
-test('full provision script connects to mysql without password for initial root user setup', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('service mysql start');
-    expect($content)->toContain('mysql --user="root" -e "ALTER USER \'root\'@\'localhost\' IDENTIFIED BY');
-    expect($content)->not->toContain('mysql --user="root" --password="$MYSQL_PASSWORD" -e "ALTER USER \'root\'@\'localhost\'');
 });
 
 test('full provision script includes error handling', function () {
@@ -739,85 +610,4 @@ test('full provision script does not include keys from users not on the team', f
 
     expect($content)->toContain($ownerKey);
     expect($content)->not->toContain($otherKey);
-});
-
-test('full provision script configures mysql client for fuse user', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "Configure MySQL client for fuse user"');
-    expect($content)->toContain('/home/fuse/.my.cnf');
-    expect($content)->toContain('[client]');
-    expect($content)->toContain('user=fuse');
-    expect($content)->toContain('host=127.0.0.1');
-    expect($content)->toContain('echo "password=$MYSQL_PASSWORD" >> /home/fuse/.my.cnf');
-    expect($content)->toContain('chmod 600 /home/fuse/.my.cnf');
-});
-
-test('full provision script sets restrictive permissions on fuse my cnf', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    $myCnfWritePos = strpos($content, 'echo "Configure MySQL client for fuse user"');
-    $chmodMyCnfPos = strrpos($content, 'chmod 600 /home/fuse/.my.cnf');
-    $chmodRecursivePos = strpos($content, 'chmod -R 755 /home/fuse');
-
-    expect($myCnfWritePos)->not->toBeFalse();
-    expect($chmodMyCnfPos)->not->toBeFalse();
-    expect($chmodRecursivePos)->not->toBeFalse();
-    expect($chmodMyCnfPos)->toBeGreaterThan($chmodRecursivePos);
-});
-
-test('full provision script writes my cnf after mysql password is generated', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-    ]);
-
-    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    $mysqlPasswordPos = strpos($content, "MYSQL_PASSWORD='");
-    $myCnfPos = strpos($content, 'echo "Configure MySQL client for fuse user"');
-
-    expect($mysqlPasswordPos)->not->toBeFalse();
-    expect($myCnfPos)->not->toBeFalse();
-    expect($myCnfPos)->toBeGreaterThan($mysqlPasswordPos);
 });

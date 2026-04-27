@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-zinc-100 dark:bg-zinc-950 antialiased py-2">
+    <body class="min-h-screen bg-zinc-100 dark:bg-zinc-950 antialiased py-2 text-zinc-950 dark:text-white">
         <flux:header class="flex items-center px-6">
             <div class="mx-auto w-full h-full [:where(&)]:max-w-4xl flex flex-wrap items-center px-4">
                 <flux:spacer />

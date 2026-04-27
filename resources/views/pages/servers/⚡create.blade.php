@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Add Server')] class extends Component
+new #[Title('Connect Server')] class extends Component
 {
     public string $ipAddress = '';
 
@@ -31,20 +31,36 @@ new #[Title('Add Server')] class extends Component
     }
 }; ?>
 
-<form wire:submit="create" class="max-w-xl mx-auto">
-    <flux:input
-        label="{{ __('IP Address') }}"
-        wire:model="ipAddress"
-        placeholder="192.168.1.1"
-        required
-        autofocus
-        data-test="add-server-ip"
-    />
+<form wire:submit="create" class="max-w-md space-y-8">
+    <div>
+        <flux:heading size="lg">{{ __('Connect a new server') }}</flux:heading>
+        <flux:text class="mt-1">
+            {{ __('Enter the public IP address of your VPS.') }}
+        </flux:text>
+    </div>
 
-<div class="mt-4 flex">
-    <flux:spacer />
-    <flux:button type="submit" variant="primary" data-test="add-server-submit">
-        {{ __('Add server') }}
-    </flux:button>
-</div>
+    <div class="space-y-6 mt-8">
+        <flux:input
+            label="{{ __('IP Address') }}"
+            wire:model="ipAddress"
+            placeholder="203.0.113.42"
+            required
+            autofocus
+            data-test="add-server-ip"
+        />
+
+        <div class="flex gap-3">
+            <flux:spacer />
+            <flux:button
+                :href="route('servers.index', ['current_team' => $this->team->slug])"
+                variant="ghost"
+                wire:navigate
+            >
+                {{ __('Cancel') }}
+            </flux:button>
+            <flux:button type="submit" variant="primary" data-test="add-server-submit" color="blue" icon:trailing="arrow-right">
+                {{ __('Connect server') }}
+            </flux:button>
+        </div>
+    </div>
 </form>

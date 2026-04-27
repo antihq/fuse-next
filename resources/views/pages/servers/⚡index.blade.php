@@ -30,19 +30,9 @@ new #[Title('Servers')] class extends Component
 }; ?>
 
 <div>
-    <div class="max-w-xl mx-auto">
-        <flux:button
-            :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
-            icon="plus"
-            class="w-full"
-            data-test="servers-add-button"
-            wire:navigate
-        >
-            {{ __('Add server') }}
-        </flux:button>
-
+    @if($this->servers->isNotEmpty())
         <div class="mt-6">
-            @forelse ($this->servers as $server)
+            @foreach ($this->servers as $server)
                 @if (!$loop->first)
                     <flux:separator variant="subtle" />
                 @endif
@@ -71,13 +61,46 @@ new #[Title('Servers')] class extends Component
                         </flux:dropdown>
                     </div>
                 </div>
-            @empty
-                <flux:text class="py-8 text-center text-zinc-500 dark:text-zinc-400">
-                    {{ __('No servers yet.') }}
-                </flux:text>
-            @endforelse
+            @endforeach
         </div>
-    </div>
+     <flux:separator variant="subtle" class="mt-6" />
+                <flux:button
+                    :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
+                    icon="plus"
+                    class="w-full md:w-auto"
+                    wire:navigate
+                >
+                    {{ __('Connect server') }}
+                </flux:button>
+    @else
+        <div class="max-w-prose space-y-8">
+            <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>
+
+            <div class="space-y-3">
+                <p class="text-sm">
+                    {{ __('You\'ll need a fresh VPS running Ubuntu LTS. Once you connect it, we\'ll give you a one-line script to run that sets everything up for deploying Laravel apps.') }}
+                </p>
+                <ul class="list-disc list-inside text-sm space-y-1">
+                    <li>{{ __('Fresh install of Ubuntu 24.04 LTS (or latest LTS)') }}</li>
+                    <li>{{ __('Make sure you can SSH in as root') }}</li>
+                    <li>{{ __('The script installs Caddy, PHP, and everything else you need') }}</li>
+                </ul>
+                <p class="text-sm">
+                    {{ __('Once set up, you can deploy Laravel sites with a single command.') }}
+                </p>
+            </div>
+
+            <flux:button
+                :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
+                icon:trailing="arrow-right"
+                color="blue"
+                variant="primary"
+                wire:navigate
+            >
+                {{ __('Connect server') }}
+            </flux:button>
+        </div>
+    @endif
 </div>
 
 

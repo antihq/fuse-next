@@ -3,24 +3,31 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-900 antialiased">
-        <flux:header class="border-b border-zinc-950/10 dark:border-white/10 bg-white dark:bg-zinc-900">
-            <flux:brand href="#" logo="/logo.svg" logo:dark="/dark-mode-logo.svg" />
+    <body class="min-h-screen bg-zinc-100 dark:bg-zinc-950 antialiased py-2">
+        <flux:header class="flex items-center px-6">
+            <div class="mx-auto w-full h-full [:where(&)]:max-w-4xl flex flex-wrap items-center px-4">
+                <flux:spacer />
 
-            <flux:spacer />
+                <a href="/" class="inline-flex items-stretch font-serif text-xl/8 text-zinc-950 dark:text-white" wire:navigate>{{ config('app.name') }}</a>
 
-            <flux:navbar class="-mb-px">
-                <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                    {{ __('Dashboard') }}
-                </flux:navbar.item>
-                <flux:navbar.item icon="server" :href="route('servers.index')" :current="request()->routeIs('servers.*')" wire:navigate>
-                    {{ __('Servers') }}
-                </flux:navbar.item>
-            </flux:navbar>
+                <flux:spacer />
 
-            <flux:spacer />
-
-            <x-desktop-user-menu :showTeam="true" />
+                <flux:navbar class="w-full justify-between grid grid-cols-3">
+                    <div class="flex">
+                        <flux:navbar.item :href="route('dashboard')" :current="request()->routeIs('dashboard')" class="data-current:after:rounded-full" wire:navigate>
+                            {{ __('Dashboard') }}
+                        </flux:navbar.item>
+                    </div>
+                    <div class="flex justify-center">
+                        <flux:navbar.item :href="route('servers.index')" :current="request()->routeIs('servers.*')" class="data-current:after:rounded-full" wire:navigate>
+                            {{ __('Servers') }}
+                        </flux:navbar.item>
+                    </div>
+                    <div class="flex justify-end">
+                        <x-desktop-user-menu class="data-current:after:rounded-full" :showTeam="true" />
+                    </div>
+                </flux:navbar>
+            </div>
         </flux:header>
 
         {{ $slot }}

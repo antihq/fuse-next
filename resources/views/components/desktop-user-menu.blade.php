@@ -1,7 +1,7 @@
 @props(['showTeam' => true])
 
-<flux:dropdown position="bottom" align="start">
-    <flux:button icon="menu-2" variant="subtle" />
+<flux:dropdown position="bottom" align="end">
+    <flux:navbar.item>Account</flux:navbar.item>
 
     <flux:menu class="min-w-56">
         @if($showTeam)

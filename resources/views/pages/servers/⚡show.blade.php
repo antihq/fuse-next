@@ -65,7 +65,8 @@ new #[Title('Server Details')] class extends Component
     public function shouldPoll(): bool
     {
         return $this->server->status === ServerStatus::Pending
-            || $this->server->status === ServerStatus::Provisioning;
+            || $this->server->status === ServerStatus::Provisioning
+            || $this->server->status === ServerStatus::Failed;
     }
 
     public function markProvisioned(): void
@@ -77,48 +78,62 @@ new #[Title('Server Details')] class extends Component
     }
 }; ?>
 
-<div class="max-w-xl mx-auto" @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif>
-    <div class="flex items-center gap-2 py-3">
-        <flux:heading>{{ $server->ip_address }}</flux:heading>
-        <flux:badge :color="$server->status->color()" size="sm">{{ $server->status->label() }}</flux:badge>
+<div @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif class="space-y-8">
+    <div>
+        <flux:breadcrumbs>
+            <flux:breadcrumbs.item :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate>
+                {{ __('Servers') }}
+            </flux:breadcrumbs.item>
+            <flux:breadcrumbs.item>{{ $server->ip_address }}</flux:breadcrumbs.item>
+        </flux:breadcrumbs>
+        <div class="mt-4">
+            <flux:heading size="lg">{{ $server->ip_address }}</flux:heading>
+            <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-2">{{ $server->status->label() }}</flux:badge>
+        </div>
     </div>
 
     @if($server->status === ServerStatus::Pending)
-        <flux:separator variant="subtle" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+            <div>
+                <flux:heading>{{ __('Set up your server') }}</flux:heading>
+                <flux:text class="mt-2">{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</flux:text>
+            </div>
 
-        <div class="py-3 space-y-3">
-            <flux:heading>{{ __('Provision Server') }}</flux:heading>
-            <flux:subheading>{{ __('SSH to your server as root and run this command') }}</flux:subheading>
+            <div class="space-y-8">
+                @if(! $this->userHasSshKeys)
+                    <flux:callout color="yellow" class="border-0!">
+                        <flux:callout.heading>{{ __('No SSH keys configured') }}</flux:callout.heading>
+                        <flux:callout.text>
+                            {{ __('Add an SSH key so you can access this server once setup is complete.') }}
+                        </flux:callout.text>
+                        <x-slot name="actions">
+                            <flux:button :href="route('ssh-keys.index')" variant="primary" color="yellow" size="sm" icon:trailing="arrow-right" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
+                        </x-slot>
+                    </flux:callout>
+                @endif
 
-            @if(! $this->userHasSshKeys)
-                <flux:callout color="amber">
-                    <flux:callout.heading>{{ __('No SSH keys configured') }}</flux:callout.heading>
-                    <flux:callout.text>
-                        {{ __('Add an SSH key so you can access this server after provisioning.') }}
-                        <flux:link :href="route('ssh-keys.index')" wire:navigate>{{ __('Add SSH Key') }}</flux:link>
-                    </flux:callout.text>
-                </flux:callout>
-            @endif
+                @if($this->teamSshKeys->isNotEmpty())
+                    <flux:text variant="subtle" size="sm">
+                        {{ __('Keys to be authorized:') }} {{ $this->teamSshKeys->map(fn ($key) => $key->name)->join(', ') }}
+                    </flux:text>
+                @endif
+            </div>
+        </div>
 
-            @if($this->teamSshKeys->isNotEmpty())
-                <flux:callout color="blue">
-                    <flux:callout.heading>{{ __('SSH keys that will be authorized') }}</flux:callout.heading>
-                    <flux:callout.text>
-                        {{ $this->teamSshKeys->map(fn ($key) => $key->name)->join(', ') }}
-                    </flux:callout.text>
-                </flux:callout>
-            @endif
-
+        <div class="space-y-8">
             <flux:input
                 :value="$this->provisioningCommand"
                 readonly
                 copyable
-                class="font-mono text-sm"
+                class="font-mono"
             />
 
-            <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
-                {{ __('Mark as Provisioned') }}
-            </flux:button>
+            <div class="flex">
+                <flux:spacer />
+                <flux:button wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
+                    {{ __('Skip — mark as ready') }}
+                </flux:button>
+            </div>
         </div>
     @endif
 
@@ -126,31 +141,57 @@ new #[Title('Server Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:heading>{{ __('Provisioning in Progress') }}</flux:heading>
+            <flux:heading>{{ __('Setting up your server') }}</flux:heading>
             <flux:subheading>{{ __('This may take a few minutes.') }}</flux:subheading>
 
             <flux:text wire:loading>
-                {{ __('Installing software...') }}
+                {{ __('Installing Caddy, PHP 8.2–8.5, Composer, Node.js, Supervisor, and more...') }}
             </flux:text>
 
-            <flux:button wire:click="markProvisioned" variant="outline" class="w-full">
-                {{ __('Mark as Provisioned') }}
+            <flux:button wire:click="markProvisioned" variant="ghost" size="sm">
+                {{ __('Skip — mark as ready') }}
             </flux:button>
         </div>
     @endif
 
+    @if($server->status === ServerStatus::Failed)
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Setup failed') }}</flux:heading>
+
+            <flux:callout color="red">
+                <flux:callout.text>
+                    {{ __('The setup script encountered an error. You can try running the command again or mark the server as ready manually.') }}
+                </flux:callout.text>
+            </flux:callout>
+
+            <flux:input
+                :value="$this->provisioningCommand"
+                readonly
+                copyable
+                class="font-mono"
+            />
+
+            <flux:button wire:click="markProvisioned" variant="ghost" size="sm">
+                {{ __('Skip — mark as ready') }}
+            </flux:button>
+        </div>
+    @endif
     @if($server->status === ServerStatus::Provisioned)
         <flux:separator variant="subtle" />
 
-        <flux:navbar class="-mb-px">
-            <flux:navbar.item :href="route('servers.show', [$this->team->slug, $this->server])" current wire:navigate>
-                {{ __('Sites') }}
-            </flux:navbar.item>
-        </flux:navbar>
+        <flux:heading size="md">{{ __('Sites') }}</flux:heading>
 
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-2">
+            @if($server->sites->isEmpty())
+                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                    {{ __('This server is ready. Add a site to start deploying your Laravel application.') }}
+                </p>
+            @endif
+
             <flux:button
                 :href="route('sites.create', [$this->team->slug, $this->server])"
                 variant="outline"

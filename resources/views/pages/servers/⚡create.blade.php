@@ -31,15 +31,15 @@ new #[Title('Connect Server')] class extends Component
     }
 }; ?>
 
-<form wire:submit="create" class="max-w-md space-y-8">
-    <div>
+<form wire:submit="create" class="space-y-8">
+    <div class="max-w-prose">
         <flux:heading size="lg">{{ __('Connect a new server') }}</flux:heading>
         <flux:text class="mt-1">
             {{ __('Enter the public IP address of your VPS.') }}
         </flux:text>
     </div>
 
-    <div class="space-y-6 mt-8">
+    <div class="max-w-md space-y-8">
         <flux:input
             label="{{ __('IP Address') }}"
             wire:model="ipAddress"

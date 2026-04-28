@@ -63,15 +63,15 @@ new #[Title('Servers')] class extends Component
                 </div>
             @endforeach
         </div>
-     <flux:separator variant="subtle" class="mt-6" />
-                <flux:button
-                    :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
-                    icon="plus"
-                    class="w-full md:w-auto"
-                    wire:navigate
-                >
-                    {{ __('Connect server') }}
-                </flux:button>
+        <flux:separator variant="subtle" class="mt-6" />
+        <flux:button
+            :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
+            icon="plus"
+            class="w-full md:w-auto"
+            wire:navigate
+        >
+            {{ __('Connect server') }}
+        </flux:button>
     @else
         <div class="max-w-prose space-y-8">
             <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>

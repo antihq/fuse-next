@@ -118,7 +118,7 @@ test('server create page can be rendered', function () {
         ->get(route('servers.create', ['current_team' => $team->slug]));
 
     $response->assertOk();
-    $response->assertSee('Add Server');
+    $response->assertSee('Connect a new server');
 });
 
 test('guests cannot access server create page', function () {
@@ -225,8 +225,9 @@ test('provisioning section hidden when server is provisioned', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Provision Server');
-    $response->assertDontSee('SSH to your server as root');
+    $response->assertDontSee('Set up your server');
+    $response->assertDontSee('SSH into your server as root');
+    $response->assertDontSee('Setting up your server');
 });
 
 test('refresh server refreshes model status', function () {
@@ -288,7 +289,7 @@ test('server show page shows team key names when team has keys', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('SSH keys that will be authorized');
+    $response->assertSee('Keys to be authorized:');
     $response->assertSee('MacBook Pro');
     $response->assertDontSee('No SSH keys configured');
 });
@@ -308,7 +309,7 @@ test('server show page shows mark as provisioned button when pending', function 
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Mark as Provisioned');
+    $response->assertSee('Skip — mark as ready');
 });
 
 test('server show page shows provisioning in progress when provisioning', function () {
@@ -326,9 +327,9 @@ test('server show page shows provisioning in progress when provisioning', functi
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Provisioning in Progress');
+    $response->assertSee('Setting up your server');
     $response->assertSee('This may take a few minutes.');
-    $response->assertSee('Installing software...');
+    $response->assertSee('Installing Caddy, PHP 8.2–8.5, Composer, Node.js, Supervisor, and more...');
 });
 
 test('server show page shows mark as provisioned button when provisioning', function () {
@@ -346,7 +347,7 @@ test('server show page shows mark as provisioned button when provisioning', func
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Mark as Provisioned');
+    $response->assertSee('Skip — mark as ready');
 });
 
 test('mark provisioned action sets status to provisioned', function () {
@@ -508,7 +509,7 @@ test('server show page shows team keys without warning when user has no keys but
     $response->assertOk();
     $response->assertSee('No SSH keys configured');
     $response->assertSee('Member Laptop');
-    $response->assertSee('SSH keys that will be authorized');
+    $response->assertSee('Keys to be authorized:');
 });
 
 test('admin can mark server as provisioned', function () {
@@ -547,7 +548,7 @@ test('server show page renders with failed status', function () {
     $response->assertSee('Failed');
 });
 
-test('polling is not active when server has failed', function () {
+test('polling is active when server has failed', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -560,5 +561,68 @@ test('polling is not active when server has failed', function () {
     $livewire = Livewire::actingAs($user)
         ->test('pages::servers.show', ['server' => $server]);
 
-    $livewire->assertSet('shouldPoll', false);
+    $livewire->assertSet('shouldPoll', true);
+});
+
+test('failed server shows retry command and skip button', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->failed()->create([
+        'team_id' => $team->id,
+        'ip_address' => '10.0.0.5',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Setup failed');
+    $response->assertSee('The setup script encountered an error. You can try running the command again or mark the server as ready manually.');
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/servers/'.$server->id.'/full-provision-script');
+    $response->assertSee('Skip — mark as ready');
+});
+
+test('mark provisioned works from failed status', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->failed()->create([
+        'team_id' => $team->id,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markProvisioned');
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+});
+
+test('mark provisioned from failed status forbidden for non owners', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->failed()->create([
+        'team_id' => $team->id,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('markProvisioned')
+        ->assertForbidden();
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Failed);
 });

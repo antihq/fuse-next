@@ -91,31 +91,20 @@ new #[Title('Server Details')] class extends Component
 <div @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif class="space-y-8">
     <div>
         <div class="flex items-center gap-3">
-            <flux:breadcrumbs>
-                <flux:breadcrumbs.item :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate>
-                    {{ __('Servers') }}
-                </flux:breadcrumbs.item>
-                <flux:breadcrumbs.item>{{ $server->ip_address }}</flux:breadcrumbs.item>
-            </flux:breadcrumbs>
-            <flux:separator variant="subtle" />
+            <flux:heading>{{ $server->ip_address }}</flux:heading>
+            <flux:separator />
         </div>
-        <div class="mt-4">
-            <div class="flex items-center gap-3">
-                <flux:heading>{{ $server->ip_address }}</flux:heading>
-                <flux:separator variant="subtle" />
-            </div>
-            <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-2">{{ $server->status->label() }}</flux:badge>
-        </div>
+        <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-2 font-mono">{{ $server->status->label() }}</flux:badge>
     </div>
 
     @if($server->status === ServerStatus::Pending)
         <div>
             <div class="flex items-center gap-3">
                 <flux:heading class="text-nowrap">{{ __('Set up your server') }}</flux:heading>
-                <flux:separator variant="subtle" />
+                <flux:separator />
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 mt-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 mt-4">
                 <div class="text-sm space-y-3">
                     <p>{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</p>
                     <p>{{ __('When setup finishes, your server will be marked as ready automatically.') }}</p>
@@ -137,7 +126,7 @@ new #[Title('Server Details')] class extends Component
                     @if($this->teamSshKeys->isNotEmpty())
                         <div>
                             <flux:heading>{{ __('Keys to be authorized') }}</flux:heading>
-                            <div class="w-full rounded-lg ring-1 ring-zinc-950/5 shadow-xs dark:ring-white/10 px-3 border-l-4 border-zinc-800/15 dark:border-white/20 mt-4">
+                            <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
                                 <flux:table class="whitespace-normal!">
                                     <flux:table.rows>
                                         @foreach($this->teamSshKeys as $key)
@@ -164,9 +153,9 @@ new #[Title('Server Details')] class extends Component
                     class="font-mono"
                 />
 
-                <flux:text>
+                <p class="text-sm">
                     {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
-                </flux:text>
+                </p>
             </div>
 
             <flux:button wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
@@ -176,7 +165,7 @@ new #[Title('Server Details')] class extends Component
     @endif
 
     @if($server->status === ServerStatus::Provisioning)
-        <flux:separator variant="subtle" />
+        <flux:separator />
 
         <div class="py-3 space-y-3">
             <flux:heading>{{ __('Setting up your server') }}</flux:heading>
@@ -197,7 +186,7 @@ new #[Title('Server Details')] class extends Component
     @endif
 
     @if($server->status === ServerStatus::Failed)
-        <flux:separator variant="subtle" />
+        <flux:separator />
 
         <div class="py-3 space-y-3">
             <flux:heading>{{ __('Setup failed') }}</flux:heading>
@@ -228,10 +217,10 @@ new #[Title('Server Details')] class extends Component
         <div>
             <div class="flex items-center gap-3">
                 <flux:heading class="text-nowrap">{{ __('Connect to your server') }}</flux:heading>
-                <flux:separator variant="subtle" />
+                <flux:separator />
             </div>
 
-            <div class="mt-2 text-sm space-y-3">
+            <div class="mt-4 text-sm space-y-3">
                 <p class="max-w-prose">{!! __('SSH into this server as <strong>fuse</strong> to manage your Laravel sites, or as <strong>root</strong> for full system access.') !!}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                     <flux:input :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
@@ -240,11 +229,10 @@ new #[Title('Server Details')] class extends Component
             </div>
         </div>
 
-        <flux:separator variant="subtle" />
-
-        <flux:heading size="md">{{ __('Sites') }}</flux:heading>
-
-        <flux:separator variant="subtle" />
+        <div class="flex items-center gap-3">
+            <flux:heading class="text-nowrap">{{ __('Sites') }}</flux:heading>
+            <flux:separator />
+        </div>
 
         <div class="py-3 space-y-2">
             @if($server->sites->isEmpty())
@@ -264,7 +252,7 @@ new #[Title('Server Details')] class extends Component
 
             @foreach($server->sites as $site)
                 @if (!$loop->first)
-                    <flux:separator variant="subtle" />
+                    <flux:separator />
                 @endif
                 <div class="flex items-center gap-2 py-2" wire:key="{{ $site->id }}">
                     <flux:text>
@@ -278,7 +266,7 @@ new #[Title('Server Details')] class extends Component
         </div>
     @endif
 
-    <flux:separator variant="subtle" />
+    <flux:separator />
 
     <div class="space-y-3">
         <flux:heading>{{ __('Danger Zone') }}</flux:heading>

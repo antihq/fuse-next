@@ -74,7 +74,10 @@ new #[Title('Servers')] class extends Component
         </div>
     @else
         <div class="space-y-8">
-            <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>
+            <div class="flex items-center gap-3">
+                <flux:heading class="whitespace-nowrap">{{ __('Connect your first server') }}</flux:heading>
+                <flux:separator />
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="space-y-8">
@@ -106,7 +109,7 @@ new #[Title('Servers')] class extends Component
 
                 <div>
                     <flux:heading>{{ __('What gets installed') }}</flux:heading>
-                    <div class="w-full rounded-lg ring-1 ring-zinc-950/5 shadow-xs dark:ring-white/10 px-3 border-l-4 border-zinc-800/15 dark:border-white/20 mt-4">
+                    <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
                         <flux:table class="whitespace-normal!">
                             <flux:table.rows>
                                 <flux:table.row>

@@ -30,7 +30,7 @@ new #[Title('Add SSH Key')] class extends Component
     <x-pages::settings.layout :heading="''">
         <div class="space-y-8">
             <div>
-                <flux:heading size="lg">{{ __('Add a new SSH key') }}</flux:heading>
+                <flux:heading>{{ __('Add a new SSH key') }}</flux:heading>
                 <flux:text class="mt-2">
                     {{ __('Paste your public key below. It will be added to every server you set up.') }}
                 </flux:text>

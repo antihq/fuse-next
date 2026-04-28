@@ -8,14 +8,6 @@ use Livewire\Component;
 
 new #[Title('Servers')] class extends Component
 {
-    public function deleteServer(int $serverId): void
-    {
-        $server = Server::findOrFail($serverId);
-        $this->authorize('delete', [Server::class, Auth::user()->currentTeam, $server]);
-        $server->delete();
-        Flux::toast(variant: 'success', text: __('Server deleted. You can now remove it from your VPS provider.'));
-    }
-
     /**
      * @return Collection<int, Server>
      */
@@ -31,47 +23,55 @@ new #[Title('Servers')] class extends Component
 
 <div>
     @if($this->servers->isNotEmpty())
-        <div class="mt-6">
-            @foreach ($this->servers as $server)
-                @if (!$loop->first)
-                    <flux:separator variant="subtle" />
-                @endif
-                <div class="flex items-center gap-2 py-3" data-test="server-row">
-                    <flux:text>
-                        <flux:link :href="route('servers.show', ['current_team' => Auth::user()->currentTeam->slug, 'server' => $server->id])" wire:navigate>
-                            {{ $server->ip_address }}
-                        </flux:link>
-                    </flux:text>
-                    <flux:badge :color="$server->status->color()" size="sm">{{ $server->status->label() }}</flux:badge>
-                    <div class="ml-auto">
-                        <flux:dropdown position="bottom" align="end">
-                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
-                            <flux:menu>
-                                <flux:menu.item
-                                    icon="trash"
-                                    variant="danger"
-                                    as="button"
-                                    type="button"
-                                    wire:click="deleteServer({{ $server->id }})"
-                                    wire:confirm="{{ __('Are you sure you want to delete this server?') }}"
-                                >
-                                    {{ __('Delete server') }}
-                                </flux:menu.item>
-                            </flux:menu>
-                        </flux:dropdown>
-                    </div>
+        <div class="space-y-6">
+            <div class="flex items-center">
+                <flux:heading>Servers</flux:heading>
+                <flux:separator class="ml-3" />
+                <flux:button :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])" icon:trailing="arrow-right" class="rounded-full!" wire:navigate>Connect server</flux:button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-sm max-w-prose">{{ __('This is where all your team\'s servers live. Once connected, you can deploy sites, check provisioning status, and manage each server\'s configuration.') }}</p>
+                <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
+                    <flux:table class="whitespace-normal!">
+                        <flux:table.columns>
+                            <flux:table.column class="w-full">IP Address</flux:table.column>
+                            <flux:table.column>Status</flux:table.column>
+                            <flux:table.column>Manage</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            @foreach ($this->servers as $server)
+                                <flux:table.row :key="$server->id">
+                                    <flux:table.cell variant="strong">{{ $server->ip_address }}</flux:table.cell>
+                                    <flux:table.cell>
+                                        <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest font-mono">{{ $server->status->label() }}</flux:badge>
+                                    </flux:table.cell>
+                                    <flux:table.cell>
+                                        <flux:button
+                                            :href="route('servers.show', ['current_team' => Auth::user()->currentTeam->slug, 'server' => $server->id])"
+                                            variant="primary"
+                                            size="sm"
+                                            icon:trailing="arrow-right"
+                                            wire:navigate
+                                            color="emerald"
+                                        >
+                                            @if($server->status->value === 'pending')
+                                                {{ __('Set Up') }}
+                                            @elseif($server->status->value === 'provisioning')
+                                                {{ __('View Progress') }}
+                                            @elseif($server->status->value === 'provisioned')
+                                                {{ __('Manage') }}
+                                            @else
+                                                {{ __('View Details') }}
+                                            @endif
+                                        </flux:button>
+                                    </flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
                 </div>
-            @endforeach
+            </div>
         </div>
-        <flux:separator variant="subtle" class="mt-6" />
-        <flux:button
-            :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
-            icon="plus"
-            class="w-full md:w-auto"
-            wire:navigate
-        >
-            {{ __('Connect server') }}
-        </flux:button>
     @else
         <div class="space-y-8">
             <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>

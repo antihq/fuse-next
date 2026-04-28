@@ -541,9 +541,9 @@ test('server can be deleted by owner', function () {
     $server = Server::factory()->create(['team_id' => $team->id]);
 
     Livewire::actingAs($owner)
-        ->test('pages::servers.index')
-        ->call('deleteServer', $server->id)
-        ->assertHasNoErrors();
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('deleteServer')
+        ->assertRedirect(route('servers.index', ['current_team' => $team->slug]));
 
     $this->assertDatabaseMissing('servers', ['id' => $server->id]);
 });
@@ -557,9 +557,9 @@ test('server can be deleted by admin', function () {
     $server = Server::factory()->create(['team_id' => $team->id]);
 
     Livewire::actingAs($admin)
-        ->test('pages::servers.index')
-        ->call('deleteServer', $server->id)
-        ->assertHasNoErrors();
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('deleteServer')
+        ->assertRedirect(route('servers.index', ['current_team' => $team->slug]));
 
     $this->assertDatabaseMissing('servers', ['id' => $server->id]);
 });
@@ -575,8 +575,8 @@ test('server cannot be deleted by member', function () {
     $server = Server::factory()->create(['team_id' => $team->id]);
 
     Livewire::actingAs($member)
-        ->test('pages::servers.index')
-        ->call('deleteServer', $server->id)
+        ->test('pages::servers.show', ['server' => $server])
+        ->call('deleteServer')
         ->assertForbidden();
 
     $this->assertDatabaseHas('servers', ['id' => $server->id]);
@@ -785,6 +785,10 @@ test('server index shows server list when servers exist', function () {
     $response->assertOk();
     $response->assertSee('192.168.1.100');
     $response->assertSee('Connect server');
+    $response->assertSee('Manage');
+    $response->assertSee('IP Address');
+    $response->assertSee('Status');
+    $response->assertDontSee('Connect your first server');
 });
 
 test('server show pending state shows setup heading and description', function () {
@@ -901,4 +905,150 @@ test('connect to server section not shown when server is pending', function () {
     $response->assertDontSee('Connect to your server');
     $response->assertDontSee('ssh fuse@10.0.0.50');
     $response->assertDontSee('ssh root@10.0.0.50');
+});
+
+test('server index shows Set Up button for pending servers', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('Set Up');
+    $response->assertDontSee('View Progress');
+});
+
+test('server index shows View Progress button for provisioning servers', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->provisioning()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('View Progress');
+    $response->assertDontSee('Set Up');
+});
+
+test('server index shows Manage button for provisioned servers', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('Manage');
+    $response->assertDontSee('Set Up');
+});
+
+test('server index shows View Details button for failed servers', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->failed()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('View Details');
+    $response->assertDontSee('Set Up');
+});
+
+test('server index only shows servers for the current team', function () {
+    $owner = User::factory()->create();
+    $otherOwner = User::factory()->create();
+    $team = Team::factory()->create();
+    $otherTeam = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $otherTeam->members()->attach($otherOwner, ['role' => TeamRole::Owner->value]);
+    $owner->switchTeam($team);
+
+    Server::factory()->create([
+        'team_id' => $team->id,
+        'ip_address' => '10.0.0.1',
+    ]);
+
+    Server::factory()->create([
+        'team_id' => $otherTeam->id,
+        'ip_address' => '10.0.0.2',
+    ]);
+
+    $response = $this
+        ->actingAs($owner)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('10.0.0.1');
+    $response->assertDontSee('10.0.0.2');
+});
+
+test('server index does not show empty state when servers exist', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->create([
+        'team_id' => $team->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertDontSee('Connect your first server');
+});
+
+test('server show page shows danger zone with delete button', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Danger Zone');
+    $response->assertSee('Delete this server and remove it from your team.');
+    $response->assertSee('Delete server');
 });

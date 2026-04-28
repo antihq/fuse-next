@@ -77,6 +77,15 @@ new #[Title('Server Details')] class extends Component
         $this->server->status = ServerStatus::Provisioned;
         $this->server->save();
     }
+
+    public function deleteServer(): void
+    {
+        $server = Server::findOrFail($this->serverId);
+        $this->authorize('delete', [Server::class, $this->team, $server]);
+        $server->delete();
+        Flux::toast(variant: 'success', text: __('Server deleted. You can now remove it from your VPS provider.'));
+        $this->redirect(route('servers.index', ['current_team' => $this->team->slug]), navigate: true);
+    }
 }; ?>
 
 <div @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif class="space-y-8">
@@ -224,7 +233,7 @@ new #[Title('Server Details')] class extends Component
 
             <div class="mt-2 text-sm space-y-3">
                 <p class="max-w-prose">{!! __('SSH into this server as <strong>fuse</strong> to manage your Laravel sites, or as <strong>root</strong> for full system access.') !!}</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                     <flux:input :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
                     <flux:input :value="'ssh root@' . $server->ip_address" readonly copyable class="font-mono" />
                 </div>
@@ -268,4 +277,22 @@ new #[Title('Server Details')] class extends Component
             @endforeach
         </div>
     @endif
+
+    <flux:separator variant="subtle" />
+
+    <div class="space-y-3">
+        <flux:heading>{{ __('Danger Zone') }}</flux:heading>
+        <div class="flex items-center justify-between">
+            <flux:text>{{ __('Delete this server and remove it from your team.') }}</flux:text>
+            <flux:button
+                wire:click="deleteServer"
+                wire:confirm="{{ __('Are you sure you want to delete this server?') }}"
+                variant="ghost"
+                color="red"
+                size="sm"
+            >
+                {{ __('Delete server') }}
+            </flux:button>
+        </div>
+    </div>
 </div>

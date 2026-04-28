@@ -3,6 +3,7 @@
 use App\Enums\ServerStatus;
 use App\Enums\TeamRole;
 use App\Models\Server;
+use App\Models\Site;
 use App\Models\SshKey;
 use App\Models\Team;
 use App\Models\User;
@@ -625,4 +626,110 @@ test('mark provisioned from failed status forbidden for non owners', function ()
 
     $server->refresh();
     expect($server->status)->toBe(ServerStatus::Failed);
+});
+
+test('server index shows empty state when no servers', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('Connect your first server');
+    $response->assertSee('You\'ll need a fresh VPS running Ubuntu LTS');
+    $response->assertSee('Fresh install of Ubuntu 24.04 LTS (or latest LTS)');
+    $response->assertSee('Once set up, you can deploy Laravel sites with a single command');
+});
+
+test('server index shows server list when servers exist', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    Server::factory()->create([
+        'team_id' => $team->id,
+        'ip_address' => '192.168.1.100',
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('192.168.1.100');
+    $response->assertSee('Connect server');
+});
+
+test('server show pending state shows setup heading and description', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'ip_address' => '10.0.0.1',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Set up your server');
+    $response->assertSee('SSH into your server as root and run the command below');
+});
+
+test('server show provisioned state shows sites section and empty state', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Sites');
+    $response->assertSee('This server is ready. Add a site to start deploying your Laravel application.');
+    $response->assertSee('Add site');
+});
+
+test('server show provisioned state shows sites list', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+        'status' => 'deployed',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Sites');
+    $response->assertSee('example.com');
+    $response->assertSee('Deployed');
 });

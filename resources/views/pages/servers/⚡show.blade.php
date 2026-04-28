@@ -96,7 +96,7 @@ new #[Title('Server Details')] class extends Component
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
             <div>
                 <flux:heading>{{ __('Set up your server') }}</flux:heading>
-                <flux:text class="mt-2">{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</flux:text>
+                <p class="mt-2 text-sm">{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</p>
             </div>
 
             <div class="space-y-8">

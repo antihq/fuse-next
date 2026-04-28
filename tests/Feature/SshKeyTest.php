@@ -118,7 +118,7 @@ test('ssh keys index shows empty state when no keys', function () {
 
     Livewire::actingAs($user)
         ->test('pages::ssh-keys.index')
-        ->assertSee('No SSH keys yet.');
+        ->assertSee('Add your first SSH key');
 });
 
 test('ssh keys index shows add ssh key button', function () {
@@ -150,4 +150,48 @@ test('pre-set fingerprint is not overwritten on create', function () {
     ]);
 
     expect($key->fingerprint)->toBe('CUSTOM:FINGERPRINT');
+});
+
+test('ssh keys empty state shows explanatory copy', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertSee('Your public key is added to every server you set up, giving you secure shell access without a password.')
+        ->assertSee('Ed25519 and RSA key types supported')
+        ->assertSee('Automatically authorized during server setup')
+        ->assertSee('Each team member can add their own keys');
+});
+
+test('ssh keys with existing keys does not show empty state', function () {
+    $user = User::factory()->create();
+    SshKey::factory()->create(['user_id' => $user->id, 'name' => 'MacBook Pro']);
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertDontSee('Add your first SSH key');
+});
+
+test('ssh keys list shows fingerprint', function () {
+    $user = User::factory()->create();
+    SshKey::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'MacBook Pro',
+        'fingerprint' => 'SHA256:uLi4wZKZ4YqC3qX8qX8qX8qX8qX8qX8qX8qX8qX8q',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertSee('SHA256:uLi4wZKZ4YqC3qX8qX8qX8qX8qX8qX8qX8qX8qX8q');
+});
+
+test('ssh keys list shows multiple keys', function () {
+    $user = User::factory()->create();
+    SshKey::factory()->create(['user_id' => $user->id, 'name' => 'MacBook Pro']);
+    SshKey::factory()->create(['user_id' => $user->id, 'name' => 'Desktop']);
+
+    Livewire::actingAs($user)
+        ->test('pages::ssh-keys.index')
+        ->assertSee('MacBook Pro')
+        ->assertSee('Desktop');
 });

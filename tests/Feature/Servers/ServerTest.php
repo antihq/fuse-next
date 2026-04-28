@@ -122,6 +122,30 @@ test('server create page can be rendered', function () {
     $response->assertSee('Connect a new server');
 });
 
+test('server create page shows breadcrumbs and prerequisites', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.create', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('Servers');
+    $response->assertSee('Connect Server');
+    $response->assertSee("Enter the public IP address of your VPS. We'll provision everything — Caddy, PHP, queues, and more.");
+    $response->assertSee('Before you begin');
+    $response->assertSee('Fresh install of Ubuntu 24.04 LTS');
+    $response->assertSee('(or latest LTS)');
+    $response->assertSee('Root SSH access');
+    $response->assertSee('Make sure you can SSH in as root');
+    $response->assertSee('Public IP address');
+    $response->assertSee('Your VPS must be reachable from the internet');
+    $response->assertSee("After connecting, you'll get a one-line script to run that installs Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.");
+});
+
 test('guests cannot access server create page', function () {
     $response = $this->get(route('servers.create', ['current_team' => 'test-team']));
 
@@ -658,12 +682,19 @@ test('server index empty state shows what gets installed section', function () {
     $response->assertOk();
     $response->assertSee('What gets installed');
     $response->assertSee('Caddy 2');
+    $response->assertSee('Web server with automatic HTTPS');
     $response->assertSee('PHP 8.2–8.5');
+    $response->assertSee('Production-ready runtime');
     $response->assertSee('Node.js 22 LTS');
+    $response->assertSee('Frontend build runtime');
     $response->assertSee('Composer 2');
+    $response->assertSee('PHP dependency manager');
     $response->assertSee('UFW + fail2ban');
+    $response->assertSee('Firewall and intrusion protection');
     $response->assertSee('Unattended upgrades');
+    $response->assertSee('Automatic security updates');
     $response->assertSee('Supervisor');
+    $response->assertSee('Process manager for queues');
 });
 
 test('server index shows server list when servers exist', function () {

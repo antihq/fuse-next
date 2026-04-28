@@ -645,6 +645,27 @@ test('server index shows empty state when no servers', function () {
     $response->assertSee('Once set up, you can deploy Laravel sites with a single command');
 });
 
+test('server index empty state shows what gets installed section', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.index', ['current_team' => $team->slug]));
+
+    $response->assertOk();
+    $response->assertSee('What gets installed');
+    $response->assertSee('Caddy 2');
+    $response->assertSee('PHP 8.2–8.5');
+    $response->assertSee('Node.js 22 LTS');
+    $response->assertSee('Composer 2');
+    $response->assertSee('UFW + fail2ban');
+    $response->assertSee('Unattended upgrades');
+    $response->assertSee('Supervisor');
+});
+
 test('server index shows server list when servers exist', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

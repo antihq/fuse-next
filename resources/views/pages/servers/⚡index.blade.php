@@ -73,88 +73,72 @@ new #[Title('Servers')] class extends Component
             {{ __('Connect server') }}
         </flux:button>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="space-y-8">
-                <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>
+        <div class="space-y-8">
+            <flux:heading size="lg">{{ __('Connect your first server') }}</flux:heading>
 
-                <div class="space-y-3">
-                    <p class="text-sm">
-                        {{ __('You\'ll need a fresh VPS running Ubuntu LTS. Once you connect it, we\'ll give you a one-line script to run that sets everything up for deploying Laravel apps.') }}
-                    </p>
-                    <ul class="list-disc list-inside text-sm space-y-1">
-                        <li>{{ __('Fresh install of Ubuntu 24.04 LTS (or latest LTS)') }}</li>
-                        <li>{{ __('Make sure you can SSH in as root') }}</li>
-                        <li>{{ __('The script installs Caddy, PHP, and everything else you need') }}</li>
-                    </ul>
-                    <p class="text-sm">
-                        {{ __('Once set up, you can deploy Laravel sites with a single command.') }}
-                    </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-8">
+                    <div class="space-y-3">
+                        <p class="text-sm">
+                            {{ __('You\'ll need a fresh VPS running Ubuntu LTS. Once you connect it, we\'ll give you a one-line script to run that sets everything up for deploying Laravel apps.') }}
+                        </p>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li>{{ __('Fresh install of Ubuntu 24.04 LTS (or latest LTS)') }}</li>
+                            <li>{{ __('Make sure you can SSH in as root') }}</li>
+                            <li>{{ __('The script installs Caddy, PHP, and everything else you need') }}</li>
+                        </ul>
+                        <p class="text-sm">
+                            {{ __('Once set up, you can deploy Laravel sites with a single command.') }}
+                        </p>
+                    </div>
+
+                    <flux:button
+                        :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
+                        icon:trailing="arrow-right"
+                        color="blue"
+                        variant="primary"
+                        wire:navigate
+                        size="sm"
+                    >
+                        {{ __('Connect server') }}
+                    </flux:button>
                 </div>
 
-                <flux:button
-                    :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])"
-                    icon:trailing="arrow-right"
-                    color="blue"
-                    variant="primary"
-                    wire:navigate
-                >
-                    {{ __('Connect server') }}
-                </flux:button>
-            </div>
-
-            <div class="flex items-start">
-                <div class="w-full rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                    <flux:heading size="md" class="mb-4">{{ __('What gets installed') }}</flux:heading>
-                    <div class="space-y-3 text-sm">
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="server" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">Caddy 2</div>
-                                <div class="text-zinc-500">{{ __('Web server with automatic HTTPS') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="code-bracket" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">PHP 8.2–8.5</div>
-                                <div class="text-zinc-500">{{ __('Production-ready runtime') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="cube" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">Node.js 22 LTS</div>
-                                <div class="text-zinc-500">{{ __('Frontend build runtime') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="document-text" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">Composer 2</div>
-                                <div class="text-zinc-500">{{ __('PHP dependency manager') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="shield-check" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">UFW + fail2ban</div>
-                                <div class="text-zinc-500">{{ __('Firewall and intrusion protection') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="arrow-path" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">Unattended upgrades</div>
-                                <div class="text-zinc-500">{{ __('Automatic security updates') }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <flux:icon name="computer-desktop" class="mt-0.5 size-4 text-zinc-500" />
-                            <div>
-                                <div class="font-medium">Supervisor</div>
-                                <div class="text-zinc-500">{{ __('Process manager for queues') }}</div>
-                            </div>
-                        </div>
+                <div>
+                    <flux:heading>{{ __('What gets installed') }}</flux:heading>
+                    <div class="w-full rounded-lg ring-1 ring-zinc-950/5 shadow-xs dark:ring-white/10 px-3 border-l-4 border-zinc-800/15 dark:border-white/20 mt-4">
+                        <flux:table class="whitespace-normal!">
+                            <flux:table.rows>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">Caddy 2</flux:table.cell>
+                                    <flux:table.cell>{{ __('Web server with automatic HTTPS') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">PHP 8.2–8.5</flux:table.cell>
+                                    <flux:table.cell>{{ __('Production-ready runtime') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">Node.js 22 LTS</flux:table.cell>
+                                    <flux:table.cell>{{ __('Frontend build runtime') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">Composer 2</flux:table.cell>
+                                    <flux:table.cell>{{ __('PHP dependency manager') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">UFW + fail2ban</flux:table.cell>
+                                    <flux:table.cell>{{ __('Firewall and intrusion protection') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">Unattended upgrades</flux:table.cell>
+                                    <flux:table.cell>{{ __('Automatic security updates') }}</flux:table.cell>
+                                </flux:table.row>
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">Supervisor</flux:table.cell>
+                                    <flux:table.cell>{{ __('Process manager for queues') }}</flux:table.cell>
+                                </flux:table.row>
+                            </flux:table.rows>
+                        </flux:table>
                     </div>
                 </div>
             </div>

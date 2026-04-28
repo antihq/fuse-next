@@ -2,6 +2,7 @@
 
 use App\Enums\ServerStatus;
 use App\Models\Server;
+use App\Models\SshKey;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
@@ -48,11 +49,11 @@ new #[Title('Server Details')] class extends Component
     #[Computed]
     public function teamSshKeys()
     {
-        return $this->team->members()
-            ->with('sshKeys')
-            ->get()
-            ->pluck('sshKeys')
-            ->flatten();
+        $memberIds = $this->team->members()->pluck('users.id');
+
+        return SshKey::whereIn('user_id', $memberIds)
+            ->with('user:id,name')
+            ->get();
     }
 
     #[Computed]
@@ -80,60 +81,88 @@ new #[Title('Server Details')] class extends Component
 
 <div @if($this->shouldPoll) wire:poll.5s="refreshServer" @endif class="space-y-8">
     <div>
-        <flux:breadcrumbs>
-            <flux:breadcrumbs.item :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate>
-                {{ __('Servers') }}
-            </flux:breadcrumbs.item>
-            <flux:breadcrumbs.item>{{ $server->ip_address }}</flux:breadcrumbs.item>
-        </flux:breadcrumbs>
+        <div class="flex items-center gap-3">
+            <flux:breadcrumbs>
+                <flux:breadcrumbs.item :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate>
+                    {{ __('Servers') }}
+                </flux:breadcrumbs.item>
+                <flux:breadcrumbs.item>{{ $server->ip_address }}</flux:breadcrumbs.item>
+            </flux:breadcrumbs>
+            <flux:separator variant="subtle" />
+        </div>
         <div class="mt-4">
-            <flux:heading size="lg">{{ $server->ip_address }}</flux:heading>
+            <div class="flex items-center gap-3">
+                <flux:heading>{{ $server->ip_address }}</flux:heading>
+                <flux:separator variant="subtle" />
+            </div>
             <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-2">{{ $server->status->label() }}</flux:badge>
         </div>
     </div>
 
     @if($server->status === ServerStatus::Pending)
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-            <div>
-                <flux:heading>{{ __('Set up your server') }}</flux:heading>
-                <p class="mt-2 text-sm">{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</p>
+        <div>
+            <div class="flex items-center gap-3">
+                <flux:heading class="text-nowrap">{{ __('Set up your server') }}</flux:heading>
+                <flux:separator variant="subtle" />
             </div>
 
-            <div class="space-y-8">
-                @if(! $this->userHasSshKeys)
-                    <flux:callout color="yellow" class="border-0!">
-                        <flux:callout.heading>{{ __('No SSH keys configured') }}</flux:callout.heading>
-                        <flux:callout.text>
-                            {{ __('Add an SSH key so you can access this server once setup is complete.') }}
-                        </flux:callout.text>
-                        <x-slot name="actions">
-                            <flux:button :href="route('ssh-keys.index')" variant="primary" color="yellow" size="sm" icon:trailing="arrow-right" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
-                        </x-slot>
-                    </flux:callout>
-                @endif
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 mt-2">
+                <div class="text-sm space-y-3">
+                    <p>{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</p>
+                    <p>{{ __('When setup finishes, your server will be marked as ready automatically.') }}</p>
+                </div>
 
-                @if($this->teamSshKeys->isNotEmpty())
-                    <flux:text variant="subtle" size="sm">
-                        {{ __('Keys to be authorized:') }} {{ $this->teamSshKeys->map(fn ($key) => $key->name)->join(', ') }}
-                    </flux:text>
-                @endif
+                <div class="space-y-8">
+                    @if(! $this->userHasSshKeys)
+                        <flux:callout color="yellow" class="border-0!">
+                            <flux:callout.heading>{{ __('No SSH keys configured') }}</flux:callout.heading>
+                            <flux:callout.text>
+                                {{ __('Add an SSH key so you can access this server once setup is complete.') }}
+                            </flux:callout.text>
+                            <x-slot name="actions">
+                                <flux:button :href="route('ssh-keys.index')" variant="primary" color="yellow" size="sm" icon:trailing="arrow-right" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
+                            </x-slot>
+                        </flux:callout>
+                    @endif
+
+                    @if($this->teamSshKeys->isNotEmpty())
+                        <div>
+                            <flux:heading>{{ __('Keys to be authorized') }}</flux:heading>
+                            <div class="w-full rounded-lg ring-1 ring-zinc-950/5 shadow-xs dark:ring-white/10 px-3 border-l-4 border-zinc-800/15 dark:border-white/20 mt-4">
+                                <flux:table class="whitespace-normal!">
+                                    <flux:table.rows>
+                                        @foreach($this->teamSshKeys as $key)
+                                            <flux:table.row wire:key="ssh-key-{{ $key->id }}">
+                                                <flux:table.cell variant="strong">{{ $key->name }}</flux:table.cell>
+                                                <flux:table.cell>{{ $key->user->name }}</flux:table.cell>
+                                            </flux:table.row>
+                                        @endforeach
+                                    </flux:table.rows>
+                                </flux:table>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 
         <div class="space-y-8">
-            <flux:input
-                :value="$this->provisioningCommand"
-                readonly
-                copyable
-                class="font-mono"
-            />
+            <div class="space-y-3">
+                <flux:input
+                    :value="$this->provisioningCommand"
+                    readonly
+                    copyable
+                    class="font-mono"
+                />
 
-            <div class="flex">
-                <flux:spacer />
-                <flux:button wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
-                    {{ __('Skip — mark as ready') }}
-                </flux:button>
+                <flux:text>
+                    {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
+                </flux:text>
             </div>
+
+            <flux:button wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
+                {{ __('Mark as ready') }}
+            </flux:button>
         </div>
     @endif
 
@@ -148,8 +177,12 @@ new #[Title('Server Details')] class extends Component
                 {{ __('Installing Caddy, PHP 8.2–8.5, Composer, Node.js, Supervisor, and more...') }}
             </flux:text>
 
-            <flux:button wire:click="markProvisioned" variant="ghost" size="sm">
-                {{ __('Skip — mark as ready') }}
+            <flux:text class="text-xs">
+                {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
+            </flux:text>
+
+            <flux:button wire:click="markProvisioned" size="sm">
+                {{ __('Mark as ready') }}
             </flux:button>
         </div>
     @endif
@@ -173,12 +206,31 @@ new #[Title('Server Details')] class extends Component
                 class="font-mono"
             />
 
+            <flux:text class="text-xs">
+                {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
+            </flux:text>
+
             <flux:button wire:click="markProvisioned" variant="ghost" size="sm">
-                {{ __('Skip — mark as ready') }}
+                {{ __('Mark as ready') }}
             </flux:button>
         </div>
     @endif
     @if($server->status === ServerStatus::Provisioned)
+        <div>
+            <div class="flex items-center gap-3">
+                <flux:heading class="text-nowrap">{{ __('Connect to your server') }}</flux:heading>
+                <flux:separator variant="subtle" />
+            </div>
+
+            <div class="mt-2 text-sm space-y-3">
+                <p class="max-w-prose">{!! __('SSH into this server as <strong>fuse</strong> to manage your Laravel sites, or as <strong>root</strong> for full system access.') !!}</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <flux:input :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
+                    <flux:input :value="'ssh root@' . $server->ip_address" readonly copyable class="font-mono" />
+                </div>
+            </div>
+        </div>
+
         <flux:separator variant="subtle" />
 
         <flux:heading size="md">{{ __('Sites') }}</flux:heading>

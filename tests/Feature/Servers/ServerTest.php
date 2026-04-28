@@ -314,9 +314,75 @@ test('server show page shows team key names when team has keys', function () {
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Keys to be authorized:');
+    $response->assertSee('Keys to be authorized');
     $response->assertSee('MacBook Pro');
+    $response->assertSee($user->name);
     $response->assertDontSee('No SSH keys configured');
+});
+
+test('server show page shows all team member keys with owner names', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $owner->switchTeam($team);
+
+    SshKey::factory()->create(['user_id' => $owner->id, 'name' => 'Owner Laptop']);
+    SshKey::factory()->create(['user_id' => $owner->id, 'name' => 'Owner Desktop']);
+    SshKey::factory()->create(['user_id' => $member->id, 'name' => 'Member MacBook']);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $response = $this
+        ->actingAs($owner)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Keys to be authorized');
+    $response->assertSee('Owner Laptop');
+    $response->assertSee('Owner Desktop');
+    $response->assertSee('Member MacBook');
+    $response->assertSee($owner->name);
+    $response->assertSee($member->name);
+});
+
+test('server show page excludes keys from non team members', function () {
+    $owner = User::factory()->create();
+    $outsider = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $owner->switchTeam($team);
+
+    SshKey::factory()->create(['user_id' => $owner->id, 'name' => 'Owner Key']);
+    SshKey::factory()->create(['user_id' => $outsider->id, 'name' => 'Outsider Key']);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $response = $this
+        ->actingAs($owner)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Keys to be authorized');
+    $response->assertSee('Owner Key');
+    $response->assertDontSee('Outsider Key');
+});
+
+test('server show page does not show keys table when no team members have keys', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Keys to be authorized');
 });
 
 test('server show page shows mark as provisioned button when pending', function () {
@@ -334,7 +400,8 @@ test('server show page shows mark as provisioned button when pending', function 
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Skip — mark as ready');
+    $response->assertSee('Mark as ready');
+    $response->assertSee("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.");
 });
 
 test('server show page shows provisioning in progress when provisioning', function () {
@@ -352,9 +419,8 @@ test('server show page shows provisioning in progress when provisioning', functi
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Setting up your server');
-    $response->assertSee('This may take a few minutes.');
-    $response->assertSee('Installing Caddy, PHP 8.2–8.5, Composer, Node.js, Supervisor, and more...');
+    $response->assertSee('Mark as ready');
+    $response->assertSee("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.");
 });
 
 test('server show page shows mark as provisioned button when provisioning', function () {
@@ -372,7 +438,8 @@ test('server show page shows mark as provisioned button when provisioning', func
         ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
 
     $response->assertOk();
-    $response->assertSee('Skip — mark as ready');
+    $response->assertSee('Mark as ready');
+    $response->assertSee("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.");
 });
 
 test('mark provisioned action sets status to provisioned', function () {
@@ -534,7 +601,8 @@ test('server show page shows team keys without warning when user has no keys but
     $response->assertOk();
     $response->assertSee('No SSH keys configured');
     $response->assertSee('Member Laptop');
-    $response->assertSee('Keys to be authorized:');
+    $response->assertSee('Keys to be authorized');
+    $response->assertSee($member->name);
 });
 
 test('admin can mark server as provisioned', function () {
@@ -609,7 +677,8 @@ test('failed server shows retry command and skip button', function () {
     $response->assertSee('The setup script encountered an error. You can try running the command again or mark the server as ready manually.');
     $response->assertSee('wget --no-verbose -O -');
     $response->assertSee('/servers/'.$server->id.'/full-provision-script');
-    $response->assertSee('Skip — mark as ready');
+    $response->assertSee('Mark as ready');
+    $response->assertSee("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.");
 });
 
 test('mark provisioned works from failed status', function () {
@@ -784,4 +853,52 @@ test('server show provisioned state shows sites list', function () {
     $response->assertSee('Sites');
     $response->assertSee('example.com');
     $response->assertSee('Deployed');
+});
+
+test('provisioned server shows connect section with ssh commands', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+        'ip_address' => '10.0.0.100',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Connect to your server');
+    $response->assertSee('fuse');
+    $response->assertSee('root');
+    $response->assertSee('SSH into this server as');
+    $response->assertSee('to manage your Laravel sites');
+    $response->assertSee('ssh fuse@10.0.0.100');
+    $response->assertSee('ssh root@10.0.0.100');
+});
+
+test('connect to server section not shown when server is pending', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+        'ip_address' => '10.0.0.50',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Connect to your server');
+    $response->assertDontSee('ssh fuse@10.0.0.50');
+    $response->assertDontSee('ssh root@10.0.0.50');
 });

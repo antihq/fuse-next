@@ -4,7 +4,7 @@ use App\Enums\ServerStatus;
 use App\Models\Server;
 use App\Models\SshKey;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Flux;
+use Flux\Flux;
 use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -239,32 +239,29 @@ new #[Title('Server Details')] class extends Component
 
                 <div class="mt-4 text-sm space-y-4">
                     <flux:input size="sm" :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
+                </div>
+            </div>
 
-                    <flux:heading size="sm">{{ __('Grant repository access') }}</flux:heading>
+            <div>
+                <div class="flex items-center gap-3">
+                    <flux:heading class="text-nowrap">{{ __('Grant repository access') }}</flux:heading>
+                    <flux:separator />
+                </div>
 
-                    <div class="space-y-3">
-                        <div>
-                            <flux:text>
-                                <strong>{{ __('Deploy key') }}</strong>
-                                <flux:badge color="blue" size="sm" class="ml-1">{{ __('Recommended') }}</flux:badge>
-                            </flux:text>
-                            <flux:text class="max-w-prose">{{ __('Per repository — GitHub → Repo → Settings → Deploy keys. Read-only by default, scoped to a single repo.') }}</flux:text>
-                        </div>
+                <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-3">
+                    <x-description.list>
+                        <x-description.term>
+                            {{ __('Deploy key') }}
+                            <flux:badge color="blue" size="sm" class="mt-1 font-mono uppercase tracking-widest">{{ __('Recommended') }}</flux:badge>
+                        </x-description.term>
+                        <x-description.details>{{ __('GitHub → Repo → Settings → Deploy keys. Read-only by default, scoped to a single repo.') }}</x-description.details>
 
-                        <flux:separator />
+                        <x-description.term>{{ __('Account SSH key') }}</x-description.term>
+                        <x-description.details>{{ __('GitHub → Settings → SSH and GPG keys. Grants access to all your repositories, but the key cannot be reused as a deploy key.') }}</x-description.details>
 
-                        <div>
-                            <flux:text><strong>{{ __('Account SSH key') }}</strong></flux:text>
-                            <flux:text class="max-w-prose">{{ __('Per account — GitHub → Settings → SSH and GPG keys. Grants access to all your repositories, but the key cannot be reused as a deploy key.') }}</flux:text>
-                        </div>
-
-                        <flux:separator />
-
-                        <div>
-                            <flux:text><strong>{{ __('Machine user') }}</strong></flux:text>
-                            <flux:text class="max-w-prose">{{ __('Create a dedicated GitHub account, add this key, then grant that account access to specific repos. Best for teams — centralized and least privilege.') }}</flux:text>
-                        </div>
-                    </div>
+                        <x-description.term>{{ __('Machine user') }}</x-description.term>
+                        <x-description.details>{{ __('Create a dedicated GitHub account, add this key, then grant that account access to specific repos. Best for teams — centralized and least privilege.') }}</x-description.details>
+                    </x-description.list>
                 </div>
             </div>
         @endif

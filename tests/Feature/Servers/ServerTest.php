@@ -1115,6 +1115,6 @@ test('server show page shows danger zone with delete button', function () {
 
     $response->assertOk();
     $response->assertSee('Danger Zone');
-    $response->assertSee('Delete this server and remove it from your team.');
+    $response->assertSee('Removes this server and all its sites from Fuse. The VPS is not touched — shut it down manually from your provider.');
     $response->assertSee('Delete server');
 });

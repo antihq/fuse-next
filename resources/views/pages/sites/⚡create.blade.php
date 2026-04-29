@@ -37,7 +37,7 @@ new #[Title('Add Site')] class extends Component
 
         $validated = $this->validate([
             'domain' => ['required', 'string'],
-            'repository' => ['required', 'url'],
+            'repository' => ['required', 'regex:#^(https?://|git@)[^\s]+$#'],
         ]);
 
         $site = (new CreateSite)->handle($this->server, $validated['domain'], $validated['repository']);
@@ -65,7 +65,7 @@ new #[Title('Add Site')] class extends Component
         <flux:input
             label="{{ __('GitHub Repository') }}"
             wire:model="repository"
-            placeholder="https://github.com/user/repo.git"
+            placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git"
             required
             data-test="add-site-repository"
         />

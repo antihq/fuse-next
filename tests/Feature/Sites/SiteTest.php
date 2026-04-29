@@ -109,7 +109,7 @@ test('site creation validates repository is required', function () {
     $this->assertDatabaseMissing('sites');
 });
 
-test('site creation validates repository is a url', function () {
+test('site creation validates repository format', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -124,12 +124,70 @@ test('site creation validates repository is a url', function () {
 
     Livewire::test('pages::sites.create', ['server' => $server])
         ->set('domain', 'example.com')
-        ->set('repository', 'not-a-valid-url')
+        ->set('repository', 'not-a-valid-repository')
         ->call('create')
-        ->assertHasErrors(['repository' => 'url']);
+        ->assertHasErrors(['repository' => 'regex']);
 
     $this->assertDatabaseMissing('sites');
 });
+
+test('sites accept valid repository formats', function (string $repository) {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::sites.create', ['server' => $server])
+        ->set('domain', 'example.com')
+        ->set('repository', $repository)
+        ->call('create')
+        ->assertHasNoErrors()
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('sites', [
+        'server_id' => $server->id,
+        'repository' => $repository,
+    ]);
+})->with([
+    'HTTPS URL' => 'https://github.com/user/repo.git',
+    'HTTP URL' => 'http://github.com/user/repo.git',
+    'SSH URL' => 'git@github.com:user/repo.git',
+    'SSH without .git suffix' => 'git@github.com:user/repo',
+    'dotted repo name' => 'git@gitlab.com:user/repo.name.git',
+]);
+
+test('sites reject invalid repository formats', function (string $repository) {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::sites.create', ['server' => $server])
+        ->set('domain', 'example.com')
+        ->set('repository', $repository)
+        ->call('create')
+        ->assertHasErrors(['repository' => 'regex']);
+
+    $this->assertDatabaseMissing('sites');
+})->with([
+    'spaces' => 'git@github.com:user/ repo.git',
+    'ftp scheme' => 'ftp://github.com/user/repo.git',
+    'bare domain' => 'github.com/user/repo.git',
+]);
 
 test('sites cannot be viewed by non team members', function () {
     $owner = User::factory()->create();

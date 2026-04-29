@@ -52,9 +52,10 @@ new #[Title('Connect Server')] class extends Component
                 required
                 autofocus
                 data-test="add-server-ip"
+                size="sm"
             />
 
-            <flux:button type="submit" variant="primary" data-test="add-server-submit" color="blue" icon:trailing="arrow-right">
+            <flux:button type="submit" variant="primary" data-test="add-server-submit" color="blue" icon:trailing="arrow-right" size="sm">
                 {{ __('Connect server') }}
             </flux:button>
         </form>

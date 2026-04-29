@@ -137,8 +137,8 @@ test('server create page shows breadcrumbs and prerequisites', function () {
     $response->assertSee('Connect Server');
     $response->assertSee("Enter the public IP address of your VPS. We'll provision everything — Caddy, PHP, queues, and more.");
     $response->assertSee('Before you begin');
-    $response->assertSee('Fresh install of Ubuntu 24.04 LTS');
-    $response->assertSee('(or latest LTS)');
+    $response->assertSee('Fresh OS install');
+    $response->assertSee('Ubuntu 24.04 LTS (or latest)');
     $response->assertSee('Root SSH access');
     $response->assertSee('Make sure you can SSH in as root');
     $response->assertSee('Public IP address');

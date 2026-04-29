@@ -39,12 +39,12 @@ new #[Title('Connect Server')] class extends Component
         </div>
     </div>
 
-    <p class="max-w-prose text-sm">
+    <p class="max-w-prose text-sm/6">
         {{ __("Enter the public IP address of your VPS. We'll provision everything — Caddy, PHP, queues, and more.") }}
     </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <form wire:submit="create" class="space-y-6">
+        <form wire:submit="create" class="space-y-8">
             <flux:input
                 label="{{ __('IP Address') }}"
                 wire:model="ipAddress"
@@ -63,24 +63,18 @@ new #[Title('Connect Server')] class extends Component
         <div>
             <flux:heading>{{ __('Before you begin') }}</flux:heading>
             <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
-                <flux:table class="whitespace-normal!">
-                    <flux:table.rows>
-                        <flux:table.row>
-                            <flux:table.cell variant="strong">{{ __('Fresh install of Ubuntu 24.04 LTS') }}</flux:table.cell>
-                            <flux:table.cell>{{ __('(or latest LTS)') }}</flux:table.cell>
-                        </flux:table.row>
-                        <flux:table.row>
-                            <flux:table.cell variant="strong">{{ __('Root SSH access') }}</flux:table.cell>
-                            <flux:table.cell>{{ __('Make sure you can SSH in as root') }}</flux:table.cell>
-                        </flux:table.row>
-                        <flux:table.row>
-                            <flux:table.cell variant="strong">{{ __('Public IP address') }}</flux:table.cell>
-                            <flux:table.cell>{{ __('Your VPS must be reachable from the internet') }}</flux:table.cell>
-                        </flux:table.row>
-                    </flux:table.rows>
-                </flux:table>
+                <x-description.list>
+                    <x-description.term>{{ __('Fresh OS install') }}</x-description.term>
+                    <x-description.details>{{ __('Ubuntu 24.04 LTS (or latest)') }}</x-description.details>
+
+                    <x-description.term>{{ __('Root SSH access') }}</x-description.term>
+                    <x-description.details>{{ __('Make sure you can SSH in as root') }}</x-description.details>
+
+                    <x-description.term>{{ __('Public IP address') }}</x-description.term>
+                    <x-description.details>{{ __('Your VPS must be reachable from the internet') }}</x-description.details>
+                </x-description.list>
             </div>
-            <p class="mt-4 text-sm">
+            <p class="mt-4 text-sm/6">
                 {{ __('After connecting, you\'ll get a one-line script to run that installs Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}
             </p>
         </div>

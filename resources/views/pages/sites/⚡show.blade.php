@@ -141,6 +141,34 @@ new #[Title('Site Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
+            <flux:heading>{{ __('Environment Variables') }}</flux:heading>
+            <flux:subheading>{{ __('The deploy script copies <code>.env.example</code> and sets <code>APP_ENV=production</code> and <code>APP_DEBUG=false</code>. Edit your <code>.env</code> file to add database credentials, mail settings, API keys, and other configuration.') }}</flux:subheading>
+
+            <flux:input
+                :value="'ssh fuse@' . $server->ip_address"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
+
+            <flux:input
+                :value="'nano /home/fuse/' . $site->domain . '/.env'"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
+
+            <flux:input
+                :value="'cd /home/fuse/' . $site->domain . ' && php artisan config:cache'"
+                readonly
+                copyable
+                class="font-mono text-sm"
+            />
+        </div>
+
+        <flux:separator variant="subtle" />
+
+        <div class="py-3 space-y-3">
             <flux:heading>{{ __('Redeploy Site') }}</flux:heading>
             <flux:subheading>{{ __('Run this command to redeploy site') }}</flux:subheading>
 

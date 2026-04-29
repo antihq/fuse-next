@@ -4,6 +4,7 @@ use App\Enums\ServerStatus;
 use App\Models\Server;
 use App\Models\SshKey;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Flux;
 use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -304,21 +305,21 @@ new #[Title('Server Details')] class extends Component
         </div>
     @endif
 
-    <flux:separator />
-
-    <div class="space-y-3">
-        <flux:heading>{{ __('Danger Zone') }}</flux:heading>
-        <div class="flex items-center justify-between">
-            <flux:text>{{ __('Delete this server and remove it from your team.') }}</flux:text>
+    <div>
+        <div class="flex items-center">
+            <flux:heading class="text-nowrap">{{ __('Danger Zone') }}</flux:heading>
+            <flux:separator class="ml-3" />
             <flux:button
                 wire:click="deleteServer"
                 wire:confirm="{{ __('Are you sure you want to delete this server?') }}"
-                variant="ghost"
-                color="red"
+                variant="danger"
                 size="sm"
+                icon:trailing="arrow-right"
+                class="rounded-full!"
             >
                 {{ __('Delete server') }}
             </flux:button>
         </div>
+        <p class="text-sm/6 mt-1 max-w-prose">{{ __('Removes this server and all its sites from Fuse. The VPS is not touched — shut it down manually from your provider.') }}</p>
     </div>
 </div>

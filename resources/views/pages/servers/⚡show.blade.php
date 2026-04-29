@@ -237,7 +237,7 @@ new #[Title('Server Details')] class extends Component
                 </div>
 
                 <div class="mt-4 text-sm space-y-4">
-                    <flux:textarea :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
+                    <flux:input :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
 
                     <flux:heading size="sm">{{ __('Grant repository access') }}</flux:heading>
 

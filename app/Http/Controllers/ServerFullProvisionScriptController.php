@@ -335,8 +335,10 @@ INDEX_EOF
 
 chown -R fuse:fuse /home/fuse/default
 
+FUSE_PUBLIC_KEY=\$(cat /home/fuse/.ssh/id_rsa.pub)
+
 echo "=== Provisioning complete ==="
-curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"completed"}' || true
+curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"completed","public_key":"'"\$FUSE_PUBLIC_KEY"'"}' || true
 echo "Done!"
 SHELL;
 

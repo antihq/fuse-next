@@ -229,6 +229,45 @@ new #[Title('Server Details')] class extends Component
             </div>
         </div>
 
+        @if($server->public_key)
+            <div>
+                <div class="flex items-center gap-3">
+                    <flux:heading class="text-nowrap">{{ __('Server SSH key') }}</flux:heading>
+                    <flux:separator />
+                </div>
+
+                <div class="mt-4 text-sm space-y-4">
+                    <flux:textarea :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
+
+                    <flux:heading size="sm">{{ __('Grant repository access') }}</flux:heading>
+
+                    <div class="space-y-3">
+                        <div>
+                            <flux:text>
+                                <strong>{{ __('Deploy key') }}</strong>
+                                <flux:badge color="blue" size="sm" class="ml-1">{{ __('Recommended') }}</flux:badge>
+                            </flux:text>
+                            <flux:text class="max-w-prose">{{ __('Per repository — GitHub → Repo → Settings → Deploy keys. Read-only by default, scoped to a single repo.') }}</flux:text>
+                        </div>
+
+                        <flux:separator />
+
+                        <div>
+                            <flux:text><strong>{{ __('Account SSH key') }}</strong></flux:text>
+                            <flux:text class="max-w-prose">{{ __('Per account — GitHub → Settings → SSH and GPG keys. Grants access to all your repositories, but the key cannot be reused as a deploy key.') }}</flux:text>
+                        </div>
+
+                        <flux:separator />
+
+                        <div>
+                            <flux:text><strong>{{ __('Machine user') }}</strong></flux:text>
+                            <flux:text class="max-w-prose">{{ __('Create a dedicated GitHub account, add this key, then grant that account access to specific repos. Best for teams — centralized and least privilege.') }}</flux:text>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="flex items-center gap-3">
             <flux:heading class="text-nowrap">{{ __('Sites') }}</flux:heading>
             <flux:separator />

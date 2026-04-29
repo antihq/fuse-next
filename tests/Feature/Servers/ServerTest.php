@@ -1032,6 +1032,72 @@ test('server index does not show empty state when servers exist', function () {
     $response->assertDontSee('Connect your first server');
 });
 
+test('provisioned server with public key shows server SSH key section', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+        'public_key' => 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB test@server',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertSee('Server SSH key');
+    $response->assertSee('Grant repository access');
+    $response->assertSee('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB test@server');
+    $response->assertSee('Deploy key');
+    $response->assertSee('Account SSH key');
+    $response->assertSee('Machine user');
+});
+
+test('provisioned server without public key does not show server SSH key section', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Server SSH key');
+    $response->assertDontSee('Grant repository access');
+});
+
+test('pending server with public key does not show server SSH key section', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Pending,
+        'public_key' => 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB test@server',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('servers.show', ['current_team' => $team->slug, 'server' => $server->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Server SSH key');
+    $response->assertDontSee('Grant repository access');
+});
+
 test('server show page shows danger zone with delete button', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

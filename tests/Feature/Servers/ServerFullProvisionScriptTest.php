@@ -611,3 +611,23 @@ test('full provision script does not include keys from users not on the team', f
     expect($content)->toContain($ownerKey);
     expect($content)->not->toContain($otherKey);
 });
+
+test('full provision script captures and reports fuse user public key', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('FUSE_PUBLIC_KEY=$(cat /home/fuse/.ssh/id_rsa.pub)');
+    expect($content)->toContain('"public_key":"\'"$FUSE_PUBLIC_KEY"\'"');
+});

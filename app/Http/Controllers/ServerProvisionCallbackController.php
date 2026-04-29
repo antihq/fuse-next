@@ -23,6 +23,11 @@ class ServerProvisionCallbackController extends Controller
 
         if ($request->input('status') === 'completed') {
             $server->status = ServerStatus::Provisioned;
+
+            if ($request->filled('public_key')) {
+                $server->public_key = $request->input('public_key');
+            }
+
             $server->save();
 
             return response()->json(['status' => 'provisioned']);

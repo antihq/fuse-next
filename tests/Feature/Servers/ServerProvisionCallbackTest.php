@@ -259,6 +259,79 @@ test('provision callback ignores error when server is already provisioned', func
     expect($server->status)->toBe(ServerStatus::Provisioned);
 });
 
+test('provision callback with completed status and public_key saves it on server', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioning,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7 fuse@server';
+
+    $response = $this->post($url, [
+        'status' => 'completed',
+        'public_key' => $publicKey,
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'provisioned']);
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+    expect($server->public_key)->toBe($publicKey);
+});
+
+test('provision callback with completed status without public_key leaves it null', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioning,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url, ['status' => 'completed']);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'provisioned']);
+
+    $server->refresh();
+    expect($server->status)->toBe(ServerStatus::Provisioned);
+    expect($server->public_key)->toBeNull();
+});
+
+test('provision callback ignores empty public_key', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioning,
+    ]);
+
+    $url = URL::signedRoute('servers.provision-callback', ['server' => $server]);
+
+    $response = $this->post($url, ['status' => 'completed', 'public_key' => '']);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'provisioned']);
+
+    $server->refresh();
+    expect($server->public_key)->toBeNull();
+});
+
 test('provision callback on provisioning server is idempotent', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

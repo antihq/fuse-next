@@ -55,7 +55,7 @@ new #[Title('SSH Keys')] class extends Component
                                         <flux:table.cell><span class="font-mono truncate max-w-[180px] block">{{ $key->fingerprint }}</span></flux:table.cell>
                                         <flux:table.cell>
                                             <flux:button
-                                                icon="trash"
+                                                icon:trailing="arrow-right"
                                                 variant="danger"
                                                 size="sm"
                                                 wire:click="deleteKey({{ $key->id }})"

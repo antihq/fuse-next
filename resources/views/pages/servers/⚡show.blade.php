@@ -94,7 +94,7 @@ new #[Title('Server Details')] class extends Component
             <flux:heading>{{ $server->ip_address }}</flux:heading>
             <flux:separator />
         </div>
-        <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-2 font-mono">{{ $server->status->label() }}</flux:badge>
+        <flux:badge :color="$server->status->color()" size="sm" class="uppercase tracking-widest mt-1 font-mono">{{ $server->status->label() }}</flux:badge>
     </div>
 
     @if($server->status === ServerStatus::Pending)
@@ -105,7 +105,7 @@ new #[Title('Server Details')] class extends Component
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 mt-4">
-                <div class="text-sm space-y-3">
+                <div class="text-sm/6 space-y-3">
                     <p>{{ __('SSH into your server as root and run the command below. It will install Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}</p>
                     <p>{{ __('When setup finishes, your server will be marked as ready automatically.') }}</p>
                 </div>
@@ -126,17 +126,13 @@ new #[Title('Server Details')] class extends Component
                     @if($this->teamSshKeys->isNotEmpty())
                         <div>
                             <flux:heading>{{ __('Keys to be authorized') }}</flux:heading>
-                            <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
-                                <flux:table class="whitespace-normal!">
-                                    <flux:table.rows>
-                                        @foreach($this->teamSshKeys as $key)
-                                            <flux:table.row wire:key="ssh-key-{{ $key->id }}">
-                                                <flux:table.cell variant="strong">{{ $key->name }}</flux:table.cell>
-                                                <flux:table.cell>{{ $key->user->name }}</flux:table.cell>
-                                            </flux:table.row>
-                                        @endforeach
-                                    </flux:table.rows>
-                                </flux:table>
+                            <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-3">
+                                <x-description.list>
+                                    @foreach($this->teamSshKeys as $key)
+                                        <x-description.term wire:key="ssh-key-{{ $key->id }}">{{ $key->name }}</x-description.term>
+                                        <x-description.details wire:key="ssh-key-detail-{{ $key->id }}">{{ $key->user->name }}</x-description.details>
+                                    @endforeach
+                                </x-description.list>
                             </div>
                         </div>
                     @endif
@@ -154,7 +150,7 @@ new #[Title('Server Details')] class extends Component
                     class="font-mono"
                 />
 
-                <p class="text-sm">
+                <p class="text-sm/6">
                     {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
                 </p>
             </div>

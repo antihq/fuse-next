@@ -31,9 +31,9 @@ new #[Title('Add SSH Key')] class extends Component
         <div class="space-y-8">
             <div>
                 <flux:heading>{{ __('Add a new SSH key') }}</flux:heading>
-                <flux:text class="mt-2">
+                <p class="mt-1 text-sm/6">
                     {{ __('Paste your public key below. It will be added to every server you set up.') }}
-                </flux:text>
+                </p>
             </div>
 
             <form wire:submit="create" class="space-y-8">

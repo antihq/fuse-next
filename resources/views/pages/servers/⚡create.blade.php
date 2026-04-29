@@ -37,11 +37,10 @@ new #[Title('Connect Server')] class extends Component
             <flux:heading class="whitespace-nowrap">{{ __('Connect a new server') }}</flux:heading>
             <flux:separator />
         </div>
+        <p class="max-w-prose text-sm/6 mt-1">
+            {{ __("Enter the public IP address of your VPS. We'll provision everything — Caddy, PHP, queues, and more.") }}
+        </p>
     </div>
-
-    <p class="max-w-prose text-sm/6">
-        {{ __("Enter the public IP address of your VPS. We'll provision everything — Caddy, PHP, queues, and more.") }}
-    </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <form wire:submit="create" class="space-y-8">
@@ -62,7 +61,7 @@ new #[Title('Connect Server')] class extends Component
 
         <div>
             <flux:heading>{{ __('Before you begin') }}</flux:heading>
-            <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
+            <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-3">
                 <x-description.list>
                     <x-description.term>{{ __('Fresh OS install') }}</x-description.term>
                     <x-description.details>{{ __('Ubuntu 24.04 LTS (or latest)') }}</x-description.details>
@@ -74,7 +73,7 @@ new #[Title('Connect Server')] class extends Component
                     <x-description.details>{{ __('Your VPS must be reachable from the internet') }}</x-description.details>
                 </x-description.list>
             </div>
-            <p class="mt-4 text-sm/6">
+            <p class="mt-3 text-sm/6">
                 {{ __('After connecting, you\'ll get a one-line script to run that installs Caddy, PHP, Composer, Node.js, and everything else needed to deploy Laravel apps.') }}
             </p>
         </div>

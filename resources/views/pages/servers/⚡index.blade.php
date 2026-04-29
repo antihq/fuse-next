@@ -54,6 +54,7 @@ new #[Title('Servers')] class extends Component
                                         icon:trailing="arrow-right"
                                         wire:navigate
                                         color="emerald"
+                                        class="w-full"
                                     >
                                         @if($server->status->value === 'pending')
                                             {{ __('Set Up') }}

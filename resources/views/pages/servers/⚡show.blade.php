@@ -151,7 +151,7 @@ new #[Title('Server Details')] class extends Component
                     class="font-mono"
                 />
 
-                <p class="text-sm/6">
+                <p class="text-sm/6 max-w-prose">
                     {{ __("The script reports back when it's done. If it doesn't, you can mark the server as ready manually.") }}
                 </p>
             </div>
@@ -219,8 +219,10 @@ new #[Title('Server Details')] class extends Component
                 <flux:separator />
             </div>
 
-            <div class="mt-4 text-sm space-y-3">
-                <p class="max-w-prose">{!! __('SSH into this server as <strong>fuse</strong> to manage your Laravel sites, or as <strong>root</strong> for full system access.') !!}</p>
+            <div class="mt-1 text-sm space-y-3">
+                <p class="max-w-prose">
+                    SSH into this server as <strong class="font-medium">fuse</strong> to manage your Laravel sites, or as <strong class="font-medium">root</strong> for full system access.
+                </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                     <flux:input size="sm" :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
                     <flux:input size="sm" :value="'ssh root@' . $server->ip_address" readonly copyable class="font-mono" />
@@ -267,41 +269,61 @@ new #[Title('Server Details')] class extends Component
             </div>
         @endif
 
-        <div class="flex items-center gap-3">
-            <flux:heading class="text-nowrap">{{ __('Sites') }}</flux:heading>
-            <flux:separator />
-        </div>
+        <div>
+            <div class="flex items-center">
+                <flux:heading class="text-nowrap">{{ __('Sites') }}</flux:heading>
+                <flux:separator class="ml-3" />
+                <flux:button
+                    size="sm"
+                    :href="route('sites.create', [$this->team->slug, $this->server])"
+                    variant="primary"
+                    icon:trailing="arrow-right"
+                    class="rounded-full!"
+                    color="emerald"
+                    wire:navigate
+                >
+                    {{ __('Add site') }}
+                </flux:button>
+            </div>
 
-        <div class="py-3 space-y-2">
             @if($server->sites->isEmpty())
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                <p class="text-sm mt-1 max-w-prose">
                     {{ __('This server is ready. Add a site to start deploying your Laravel application.') }}
                 </p>
-            @endif
-
-            <flux:button
-                size="sm"
-                :href="route('sites.create', [$this->team->slug, $this->server])"
-                variant="outline"
-                class="w-full"
-                wire:navigate
-            >
-                {{ __('Add site') }}
-            </flux:button>
-
-            @foreach($server->sites as $site)
-                @if (!$loop->first)
-                    <flux:separator />
-                @endif
-                <div class="flex items-center gap-2 py-2" wire:key="{{ $site->id }}">
-                    <flux:text>
-                        <flux:link :href="route('sites.show', [$this->team->slug, $this->server, $site])" wire:navigate>
-                            {{ $site->domain }}
-                        </flux:link>
-                    </flux:text>
-                    <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
+            @else
+                <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3 mt-4">
+                    <flux:table class="whitespace-normal!">
+                        <flux:table.columns>
+                            <flux:table.column class="w-full">{{ __('Domain') }}</flux:table.column>
+                            <flux:table.column>{{ __('Status') }}</flux:table.column>
+                            <flux:table.column>{{ __('Manage') }}</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            @foreach($server->sites as $site)
+                                <flux:table.row :key="$site->id">
+                                    <flux:table.cell variant="strong">{{ $site->domain }}</flux:table.cell>
+                                    <flux:table.cell>
+                                        <flux:badge :color="$site->status->color()" size="sm">{{ $site->status->label() }}</flux:badge>
+                                    </flux:table.cell>
+                                    <flux:table.cell>
+                                        <flux:button
+                                            :href="route('sites.show', [$this->team->slug, $this->server, $site])"
+                                            variant="primary"
+                                            size="sm"
+                                            icon:trailing="arrow-right"
+                                            wire:navigate
+                                            color="emerald"
+                                            class="w-full"
+                                        >
+                                            {{ __('Manage') }}
+                                        </flux:button>
+                                    </flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        </flux:table.rows>
+                    </flux:table>
                 </div>
-            @endforeach
+            @endif
         </div>
     @endif
 

@@ -9,6 +9,7 @@
             @csrf
             <!-- Name -->
             <flux:input
+                size="sm"
                 name="name"
                 :label="__('Name')"
                 :value="old('name')"
@@ -21,6 +22,7 @@
 
             <!-- Email Address -->
             <flux:input
+                size="sm"
                 name="email"
                 :label="__('Email address')"
                 :value="old('email')"
@@ -32,6 +34,7 @@
 
             <!-- Password -->
             <flux:input
+                size="sm"
                 name="password"
                 :label="__('Password')"
                 type="password"
@@ -43,6 +46,7 @@
 
             <!-- Confirm Password -->
             <flux:input
+                size="sm"
                 name="password_confirmation"
                 :label="__('Confirm password')"
                 type="password"
@@ -53,7 +57,7 @@
             />
 
             <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
+                <flux:button size="sm" type="submit" variant="primary" class="w-full" data-test="register-user-button">
                     {{ __('Create account') }}
                 </flux:button>
             </div>

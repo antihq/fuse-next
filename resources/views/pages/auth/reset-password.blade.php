@@ -12,6 +12,7 @@
 
             <!-- Email Address -->
             <flux:input
+                size="sm"
                 name="email"
                 value="{{ request('email') }}"
                 :label="__('Email')"
@@ -22,6 +23,7 @@
 
             <!-- Password -->
             <flux:input
+                size="sm"
                 name="password"
                 :label="__('Password')"
                 type="password"
@@ -33,6 +35,7 @@
 
             <!-- Confirm Password -->
             <flux:input
+                size="sm"
                 name="password_confirmation"
                 :label="__('Confirm password')"
                 type="password"
@@ -43,7 +46,7 @@
             />
 
             <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full" data-test="reset-password-button">
+                <flux:button size="sm" type="submit" variant="primary" class="w-full" data-test="reset-password-button">
                     {{ __('Reset password') }}
                 </flux:button>
             </div>

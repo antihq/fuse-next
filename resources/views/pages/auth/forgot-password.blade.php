@@ -10,6 +10,7 @@
 
             <!-- Email Address -->
             <flux:input
+                size="sm"
                 name="email"
                 :label="__('Email address')"
                 type="email"
@@ -18,7 +19,7 @@
                 placeholder="email@example.com"
             />
 
-            <flux:button variant="primary" type="submit" class="w-full" data-test="email-password-reset-link-button">
+            <flux:button size="sm" variant="primary" type="submit" class="w-full" data-test="email-password-reset-link-button">
                 {{ __('Email password reset link') }}
             </flux:button>
         </form>

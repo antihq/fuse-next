@@ -109,6 +109,7 @@ new #[Title('Site Details')] class extends Component
             <flux:subheading>{{ __('Run this command to deploy site') }}</flux:subheading>
 
             <flux:input
+                size="sm"
                 :value="$this->deployScriptCommand"
                 readonly
                 copyable
@@ -145,6 +146,7 @@ new #[Title('Site Details')] class extends Component
             <flux:subheading>{{ __('The deploy script copies <code>.env.example</code> and sets <code>APP_ENV=production</code> and <code>APP_DEBUG=false</code>. Edit your <code>.env</code> file to add database credentials, mail settings, API keys, and other configuration.') }}</flux:subheading>
 
             <flux:input
+                size="sm"
                 :value="'ssh fuse@' . $server->ip_address"
                 readonly
                 copyable
@@ -152,6 +154,7 @@ new #[Title('Site Details')] class extends Component
             />
 
             <flux:input
+                size="sm"
                 :value="'nano /home/fuse/' . $site->domain . '/.env'"
                 readonly
                 copyable
@@ -159,6 +162,7 @@ new #[Title('Site Details')] class extends Component
             />
 
             <flux:input
+                size="sm"
                 :value="'cd /home/fuse/' . $site->domain . ' && php artisan config:cache'"
                 readonly
                 copyable
@@ -173,6 +177,7 @@ new #[Title('Site Details')] class extends Component
             <flux:subheading>{{ __('Run this command to redeploy site') }}</flux:subheading>
 
             <flux:input
+                size="sm"
                 :value="$this->redeployScriptCommand"
                 readonly
                 copyable
@@ -185,7 +190,7 @@ new #[Title('Site Details')] class extends Component
         <flux:separator variant="subtle" />
 
         <div class="py-3 space-y-3">
-            <flux:button wire:click="markDeployed" variant="outline" class="w-full">
+            <flux:button size="sm" wire:click="markDeployed" variant="outline" class="w-full">
                 {{ __('Mark as Deployed') }}
             </flux:button>
         </div>
@@ -199,13 +204,14 @@ new #[Title('Site Details')] class extends Component
             <flux:subheading>{{ __('Run this command on your server to remove the site') }}</flux:subheading>
 
             <flux:input
+                size="sm"
                 :value="$this->destroyScriptCommand"
                 readonly
                 copyable
                 class="font-mono text-sm"
             />
 
-            <flux:button wire:click="markDeleted" variant="outline" class="w-full">
+            <flux:button size="sm" wire:click="markDeleted" variant="outline" class="w-full">
                 {{ __('Mark as Deleted') }}
             </flux:button>
         </div>
@@ -216,6 +222,7 @@ new #[Title('Site Details')] class extends Component
 
         <div class="py-3">
             <flux:button
+                size="sm"
                 wire:click="initiateDelete"
                 wire:confirm="Are you sure you want to delete {{ $site->domain }}?"
                 variant="danger"

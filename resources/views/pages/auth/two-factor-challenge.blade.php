@@ -57,6 +57,7 @@
                     <div x-show="showRecoveryInput">
                         <div class="my-5">
                             <flux:input
+                                size="sm"
                                 type="text"
                                 name="recovery_code"
                                 x-ref="recovery_code"
@@ -74,6 +75,7 @@
                     </div>
 
                     <flux:button
+                        size="sm"
                         variant="primary"
                         type="submit"
                         class="w-full"

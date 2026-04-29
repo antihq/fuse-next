@@ -37,9 +37,10 @@ new #[Title('Add SSH Key')] class extends Component
             </div>
 
             <form wire:submit="create" class="space-y-8">
-                <flux:input wire:model="name" :label="__('Name')" :placeholder="__('MacBook Pro')" required autofocus />
+                <flux:input size="sm" wire:model="name" :label="__('Name')" :placeholder="__('MacBook Pro')" required autofocus />
 
                 <flux:textarea
+                    size="sm"
                     wire:model="public_key"
                     :label="__('Public Key')"
                     :placeholder="__('ssh-ed25519 AAAAC3Nza...')"
@@ -48,7 +49,7 @@ new #[Title('Add SSH Key')] class extends Component
                     class="font-mono text-sm"
                 />
 
-                <flux:button type="submit" variant="primary" color="blue" icon:trailing="arrow-right">
+                <flux:button size="sm" type="submit" variant="primary" color="blue" icon:trailing="arrow-right">
                     {{ __('Add key') }}
                 </flux:button>
             </form>

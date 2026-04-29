@@ -196,6 +196,7 @@ new class extends Component {
 
                     <div class="flex items-center space-x-3">
                         <flux:button
+                            size="sm"
                             variant="outline"
                             class="flex-1"
                             wire:click="resetVerification"
@@ -204,6 +205,7 @@ new class extends Component {
                         </flux:button>
 
                         <flux:button
+                            size="sm"
                             variant="primary"
                             class="flex-1"
                             wire:click="confirmTwoFactor"
@@ -239,6 +241,7 @@ new class extends Component {
 
                 <div>
                     <flux:button
+                        size="sm"
                         :disabled="$errors->has('setupData')"
                         variant="primary"
                         class="w-full"

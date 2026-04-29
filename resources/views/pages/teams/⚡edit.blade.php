@@ -145,9 +145,9 @@ new class extends Component
                 @if ($this->permissions->canUpdateTeam)
                     <div class="space-y-4">
                         <form wire:submit="updateTeam" class="space-y-6">
-                            <flux:input wire:model="teamName" :label="__('Team name')" required data-test="team-name-input" />
+                            <flux:input size="sm" wire:model="teamName" :label="__('Team name')" required data-test="team-name-input" />
 
-                            <flux:button variant="primary" type="submit" data-test="team-save-button">
+                            <flux:button size="sm" variant="primary" type="submit" data-test="team-save-button">
                                 {{ __('Save') }}
                             </flux:button>
                         </form>
@@ -170,7 +170,7 @@ new class extends Component
 
                     @if ($this->permissions->canCreateInvitation)
                         <flux:modal.trigger name="invite-member">
-                            <flux:button variant="primary" icon="user-plus" data-test="invite-member-button">
+                            <flux:button size="sm" variant="primary" icon="user-plus" data-test="invite-member-button">
                                 {{ __('Invite member') }}
                             </flux:button>
                         </flux:modal.trigger>
@@ -300,7 +300,7 @@ new class extends Component
                         </div>
 
                         <flux:modal.trigger name="delete-team">
-                            <flux:button variant="danger" data-test="delete-team-button">
+                            <flux:button size="sm" variant="danger" data-test="delete-team-button">
                                 {{ __('Delete team') }}
                             </flux:button>
                         </flux:modal.trigger>

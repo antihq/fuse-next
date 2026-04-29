@@ -27,7 +27,7 @@ new #[Title('Servers')] class extends Component
             <div class="flex items-center">
                 <flux:heading>Servers</flux:heading>
                 <flux:separator class="ml-3" />
-                <flux:button :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])" icon:trailing="arrow-right" class="rounded-full!" wire:navigate>Connect server</flux:button>
+                <flux:button size="sm" :href="route('servers.create', ['current_team' => Auth::user()->currentTeam->slug])" icon:trailing="arrow-right" class="rounded-full!" wire:navigate>Connect server</flux:button>
             </div>
             <div class="space-y-4">
                 <p class="text-sm max-w-prose">{{ __('This is where all your team\'s servers live. Once connected, you can deploy sites, check provisioning status, and manage each server\'s configuration.') }}</p>

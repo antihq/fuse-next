@@ -147,6 +147,7 @@ new #[Title('Server Details')] class extends Component
         <div class="space-y-8">
             <div class="space-y-3">
                 <flux:input
+                    size="sm"
                     :value="$this->provisioningCommand"
                     readonly
                     copyable
@@ -158,7 +159,7 @@ new #[Title('Server Details')] class extends Component
                 </p>
             </div>
 
-            <flux:button wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
+            <flux:button size="sm" wire:click="markProvisioned" icon:trailing="arrow-right" variant="primary" color="emerald">
                 {{ __('Mark as ready') }}
             </flux:button>
         </div>
@@ -198,6 +199,7 @@ new #[Title('Server Details')] class extends Component
             </flux:callout>
 
             <flux:input
+                size="sm"
                 :value="$this->provisioningCommand"
                 readonly
                 copyable
@@ -223,8 +225,8 @@ new #[Title('Server Details')] class extends Component
             <div class="mt-4 text-sm space-y-3">
                 <p class="max-w-prose">{!! __('SSH into this server as <strong>fuse</strong> to manage your Laravel sites, or as <strong>root</strong> for full system access.') !!}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                    <flux:input :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
-                    <flux:input :value="'ssh root@' . $server->ip_address" readonly copyable class="font-mono" />
+                    <flux:input size="sm" :value="'ssh fuse@' . $server->ip_address" readonly copyable class="font-mono" />
+                    <flux:input size="sm" :value="'ssh root@' . $server->ip_address" readonly copyable class="font-mono" />
                 </div>
             </div>
         </div>
@@ -237,7 +239,7 @@ new #[Title('Server Details')] class extends Component
                 </div>
 
                 <div class="mt-4 text-sm space-y-4">
-                    <flux:input :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
+                    <flux:input size="sm" :value="$server->public_key" readonly copyable rows="2" class="font-mono text-xs" />
 
                     <flux:heading size="sm">{{ __('Grant repository access') }}</flux:heading>
 
@@ -281,6 +283,7 @@ new #[Title('Server Details')] class extends Component
             @endif
 
             <flux:button
+                size="sm"
                 :href="route('sites.create', [$this->team->slug, $this->server])"
                 variant="outline"
                 class="w-full"

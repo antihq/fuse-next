@@ -37,7 +37,7 @@ new #[Title('SSH Keys')] class extends Component
                 <div class="flex items-center">
                     <flux:heading class="whitespace-nowrap">SSH Keys</flux:heading>
                     <flux:separator class="ml-3" />
-                    <flux:button :href="route('ssh-keys.create')" icon:trailing="plus" class="rounded-full!" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
+                    <flux:button size="sm" :href="route('ssh-keys.create')" icon:trailing="plus" class="rounded-full!" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
                 </div>
                 <div class="space-y-4">
                     <p class="text-sm max-w-prose">{{ __('These keys are added to every server you provision, giving you passwordless SSH access.') }}</p>

@@ -133,14 +133,14 @@ new class extends Component {
                 <flux:subheading>{{ __('Give your team a name to get started.') }}</flux:subheading>
             </div>
 
-            <flux:input wire:model="teamName" :label="__('Team name')" type="text" required autofocus data-test="switcher-create-team-name" />
+            <flux:input size="sm" wire:model="teamName" :label="__('Team name')" type="text" required autofocus data-test="switcher-create-team-name" />
 
             <div class="flex justify-end space-x-2 rtl:space-x-reverse">
                 <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                    <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
                 </flux:modal.close>
 
-                <flux:button variant="primary" type="submit" data-test="switcher-create-team-submit">
+                <flux:button size="sm" variant="primary" type="submit" data-test="switcher-create-team-submit">
                     {{ __('Create team') }}
                 </flux:button>
             </div>

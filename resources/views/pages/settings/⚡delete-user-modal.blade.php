@@ -35,14 +35,14 @@ new class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:input wire:model="password" :label="__('Password')" type="password" viewable />
+        <flux:input size="sm" wire:model="password" :label="__('Password')" type="password" viewable />
 
         <div class="flex justify-end space-x-2 rtl:space-x-reverse">
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
             </flux:modal.close>
 
-            <flux:button variant="danger" type="submit" data-test="confirm-delete-user-button">
+            <flux:button size="sm" variant="danger" type="submit" data-test="confirm-delete-user-button">
                 {{ __('Delete account') }}
             </flux:button>
         </div>

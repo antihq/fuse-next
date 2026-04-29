@@ -31,6 +31,7 @@ new #[Title('Sites')] class extends Component
 
 <div class="max-w-xl mx-auto">
     <flux:button
+        size="sm"
         :href="route('sites.create', [$this->team->slug, $this->server])"
         icon="plus"
         class="mt-5 w-full"

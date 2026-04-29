@@ -11,6 +11,7 @@
             @csrf
 
             <flux:input
+                size="sm"
                 name="password"
                 :label="__('Password')"
                 type="password"
@@ -20,7 +21,7 @@
                 viewable
             />
 
-            <flux:button variant="primary" type="submit" class="w-full" data-test="confirm-password-button">
+            <flux:button size="sm" variant="primary" type="submit" class="w-full" data-test="confirm-password-button">
                 {{ __('Confirm') }}
             </flux:button>
         </form>

@@ -94,6 +94,7 @@ new #[Title('Security settings')] class extends Component {
     <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
             <flux:input
+                size="sm"
                 wire:model="current_password"
                 :label="__('Current password')"
                 type="password"
@@ -102,6 +103,7 @@ new #[Title('Security settings')] class extends Component {
                 viewable
             />
             <flux:input
+                size="sm"
                 wire:model="password"
                 :label="__('New password')"
                 type="password"
@@ -110,6 +112,7 @@ new #[Title('Security settings')] class extends Component {
                 viewable
             />
             <flux:input
+                size="sm"
                 wire:model="password_confirmation"
                 :label="__('Confirm password')"
                 type="password"
@@ -119,7 +122,7 @@ new #[Title('Security settings')] class extends Component {
             />
 
             <div class="flex items-center gap-4">
-                <flux:button variant="primary" type="submit" data-test="update-password-button">
+                <flux:button size="sm" variant="primary" type="submit" data-test="update-password-button">
                     {{ __('Save') }}
                 </flux:button>
             </div>
@@ -139,6 +142,7 @@ new #[Title('Security settings')] class extends Component {
 
                             <div class="flex justify-start">
                                 <flux:button
+                                    size="sm"
                                     variant="danger"
                                     wire:click="disable"
                                 >
@@ -156,6 +160,7 @@ new #[Title('Security settings')] class extends Component {
 
                             <flux:modal.trigger name="two-factor-setup-modal">
                                 <flux:button
+                                    size="sm"
                                     variant="primary"
                                     wire:click="$dispatch('start-two-factor-setup')"
                                 >

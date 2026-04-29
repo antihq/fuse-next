@@ -53,6 +53,7 @@ new #[Title('Add Site')] class extends Component
 
 <form wire:submit="create" class="max-w-xl mx-auto">
     <flux:input
+        size="sm"
         label="{{ __('Domain') }}"
         wire:model="domain"
         placeholder="example.com"
@@ -63,6 +64,7 @@ new #[Title('Add Site')] class extends Component
 
     <div class="mt-4">
         <flux:input
+            size="sm"
             label="{{ __('GitHub Repository') }}"
             wire:model="repository"
             placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git"
@@ -73,7 +75,7 @@ new #[Title('Add Site')] class extends Component
 
     <div class="mt-4 flex">
         <flux:spacer />
-        <flux:button type="submit" variant="primary" data-test="add-site-submit">
+        <flux:button size="sm" type="submit" variant="primary" data-test="add-site-submit">
             {{ __('Add site') }}
         </flux:button>
     </div>

@@ -81,14 +81,14 @@ new class extends Component {
         </div>
 
         <div class="space-y-4">
-            <flux:input wire:model="deleteName" :label="$this->deleteConfirmLabel" required data-test="delete-team-name" />
+            <flux:input size="sm" wire:model="deleteName" :label="$this->deleteConfirmLabel" required data-test="delete-team-name" />
         </div>
 
         <div class="flex justify-end space-x-2 rtl:space-x-reverse">
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
             </flux:modal.close>
-            <flux:button variant="danger" type="submit" data-test="delete-team-confirm">
+            <flux:button size="sm" variant="danger" type="submit" data-test="delete-team-confirm">
                 {{ __('Delete team') }}
             </flux:button>
         </div>

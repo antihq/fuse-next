@@ -280,7 +280,7 @@ test('site show page renders with deploy command for pending site', function () 
     $response->assertOk();
     $response->assertSee('example.com');
     $response->assertSee('https://github.com/user/repo.git');
-    $response->assertSee('Deploy Site');
+    $response->assertSee('Deploy your site');
     $response->assertSee('wget --no-verbose -O -');
     $response->assertSee('/sites/'.$site->id.'/deploy-script');
 });
@@ -308,7 +308,7 @@ test('site show page shows deploying state', function () {
     $response->assertOk();
     $response->assertSee('Deploying');
     $response->assertSee('This may take a few minutes.');
-    $response->assertSee('Deploying site...');
+    $response->assertSee('Cloning repository, installing dependencies, and configuring Caddy...');
 });
 
 test('site show page shows deployed state', function () {
@@ -332,8 +332,8 @@ test('site show page shows deployed state', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Site Deployed');
-    $response->assertSee('Your site has been deployed successfully.');
+    $response->assertSee('Connect to your site');
+    $response->assertSee('SSH into the server to manage your Laravel site.');
 });
 
 test('mark deployed action sets status to deployed', function () {
@@ -476,9 +476,8 @@ test('site show page shows redeploy command for deployed site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Site Deployed');
-    $response->assertSee('Redeploy Site');
-    $response->assertSee('Run this command to redeploy site');
+    $response->assertSee('Redeploy site');
+    $response->assertSee('Run this command to redeploy your site');
     $response->assertSee('wget --no-verbose -O -');
     $response->assertSee('/sites/'.$site->id.'/redeploy-script');
 });
@@ -504,8 +503,8 @@ test('redeploy section not shown for pending site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Redeploy Site');
-    $response->assertDontSee('Run this command to redeploy site');
+    $response->assertDontSee('Redeploy site');
+    $response->assertDontSee('Run this command to redeploy your site');
     $response->assertDontSee('/redeploy-script');
 });
 
@@ -556,8 +555,8 @@ test('redeploy section not shown for deploying site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Redeploy Site');
-    $response->assertDontSee('Run this command to redeploy site');
+    $response->assertDontSee('Redeploy site');
+    $response->assertDontSee('Run this command to redeploy your site');
     $response->assertDontSee('/redeploy-script');
 });
 
@@ -681,7 +680,7 @@ test('delete button is visible for deployed site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Delete Site');
+    $response->assertSee('Delete site');
 });
 
 test('delete button is visible for pending site', function () {
@@ -706,7 +705,7 @@ test('delete button is visible for pending site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Delete Site');
+    $response->assertSee('Delete site');
 });
 
 test('delete button is visible for failed site', function () {
@@ -730,7 +729,7 @@ test('delete button is visible for failed site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Delete Site');
+    $response->assertSee('Delete site');
 });
 
 test('delete button is not visible for deploying site', function () {
@@ -754,7 +753,7 @@ test('delete button is not visible for deploying site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Delete Site');
+    $response->assertDontSee('Delete site');
 });
 
 test('delete button is not visible for deleting site', function () {
@@ -778,7 +777,7 @@ test('delete button is not visible for deleting site', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Delete Site');
+    $response->assertDontSee('Delete site');
 });
 
 test('destroy command shown when site is deleting', function () {
@@ -802,9 +801,9 @@ test('destroy command shown when site is deleting', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertSee('Remove Site');
-    $response->assertSee('Run this command on your server to remove the site');
-    $response->assertSee('Mark as Deleted');
+    $response->assertSee('Remove site');
+    $response->assertSee('Run this command on your server to remove the site.');
+    $response->assertSee('Mark as deleted');
     $response->assertSee('wget --no-verbose -O -');
     $response->assertSee('/sites/'.$site->id.'/destroy-script');
 });
@@ -830,8 +829,8 @@ test('destroy command not shown when site is not deleting', function () {
         ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
 
     $response->assertOk();
-    $response->assertDontSee('Remove Site');
-    $response->assertDontSee('Mark as Deleted');
+    $response->assertDontSee('Remove site');
+    $response->assertDontSee('Mark as deleted');
     $response->assertDontSee('/destroy-script');
 });
 
@@ -881,4 +880,150 @@ test('refresh site updates to deleting status', function () {
 
     $livewire->assertSet('site.status', SiteStatus::Deleting);
     $livewire->assertSet('shouldPoll', true);
+});
+
+test('failed state shows deployment failed heading and red callout', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->failed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Deployment failed');
+    $response->assertSee('The deploy script encountered an error. You can try running the command again or mark the site as deployed manually.');
+    $response->assertSee('wget --no-verbose -O -');
+    $response->assertSee('/sites/'.$site->id.'/deploy-script');
+    $response->assertSee('Mark as deployed');
+});
+
+test('deployed state shows connect section with ssh command', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+        'ip_address' => '10.0.0.100',
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Connect to your site');
+    $response->assertSee('ssh fuse@10.0.0.100');
+});
+
+test('deploying state shows mark as deployed fallback button', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deploying()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Mark as deployed');
+});
+
+test('admin can initiate delete', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('initiateDelete');
+
+    $site->refresh();
+    expect($site->status)->toBe(SiteStatus::Deleting);
+});
+
+test('admin can mark deleted', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('markDeleted')
+        ->assertRedirect(route('sites.index', ['current_team' => $team->slug, $server]));
+
+    $this->assertDatabaseMissing('sites', ['id' => $site->id]);
+});
+
+test('admin can mark deployed', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deploying()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->call('markDeployed');
+
+    $site->refresh();
+    expect($site->status)->toBe(SiteStatus::Deployed);
 });

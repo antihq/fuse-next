@@ -415,6 +415,38 @@ test('deploy script reloads caddy', function () {
     expect($content)->toContain('sudo service caddy reload');
 });
 
+test('deploy script forces sqlite database connection', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Force SQLite database connection"');
+    expect($content)->toContain("sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env");
+    expect($content)->toContain("sed -i '/^DB_HOST=/d' .env");
+    expect($content)->toContain("sed -i '/^DB_PORT=/d' .env");
+    expect($content)->toContain("sed -i '/^DB_DATABASE=/d' .env");
+    expect($content)->toContain("sed -i '/^DB_USERNAME=/d' .env");
+    expect($content)->toContain("sed -i '/^DB_PASSWORD=/d' .env");
+});
+
 test('deploy script sets production env', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();

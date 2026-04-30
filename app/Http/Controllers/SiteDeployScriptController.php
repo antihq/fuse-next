@@ -57,6 +57,14 @@ sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo "APP_ENV=production" >> 
 sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo "APP_DEBUG=false" >> .env
 sed -i "s/^APP_URL=.*/APP_URL=https:\/\/\$DOMAIN/" .env || echo "APP_URL=https://\$DOMAIN" >> .env
 
+echo "Force SQLite database connection"
+sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env || echo "DB_CONNECTION=sqlite" >> .env
+sed -i '/^DB_HOST=/d' .env
+sed -i '/^DB_PORT=/d' .env
+sed -i '/^DB_DATABASE=/d' .env
+sed -i '/^DB_USERNAME=/d' .env
+sed -i '/^DB_PASSWORD=/d' .env
+
 echo "Generate APP_KEY"
 \$PHP artisan key:generate --ansi
 

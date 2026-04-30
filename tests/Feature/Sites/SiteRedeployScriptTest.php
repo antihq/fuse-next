@@ -494,8 +494,9 @@ test('redeploy script restarts php fpm', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Restart PHP-FPM"');
-    expect($content)->toContain('sudo service php8.5-fpm restart');
+    expect($content)->toContain('echo "Reload PHP-FPM"');
+    expect($content)->toContain('sudo service php8.5-fpm reload');
+    expect($content)->toContain('flock -w 10 9');
 });
 
 test('redeploy script brings app back up', function () {

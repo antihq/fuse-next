@@ -60,8 +60,10 @@ echo "Set directory permissions"
 chmod -R 775 storage bootstrap/cache
 chown -R fuse:fuse storage bootstrap/cache
 
-echo "Restart PHP-FPM"
-sudo service php8.5-fpm restart
+echo "Reload PHP-FPM"
+touch /tmp/fpmlock 2>/dev/null || true
+( flock -w 10 9 || exit 1
+    sudo service php8.5-fpm reload ) 9>/tmp/fpmlock
 
 echo "Bring application back up"
 php artisan up

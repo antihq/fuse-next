@@ -247,8 +247,9 @@ test('destroy script reloads caddy and restarts php fpm', function () {
 
     expect($content)->toContain('echo "Reload Caddy"');
     expect($content)->toContain('sudo service caddy reload');
-    expect($content)->toContain('echo "Restart PHP-FPM"');
-    expect($content)->toContain('sudo service php8.5-fpm restart');
+    expect($content)->toContain('echo "Reload PHP-FPM"');
+    expect($content)->toContain('sudo service php8.5-fpm reload');
+    expect($content)->toContain('flock -w 10 9');
 });
 
 test('destroy script does not include deploy operations', function () {

@@ -104,8 +104,10 @@ CADDY_EOF
 echo "Reload Caddy"
 sudo service caddy reload
 
-echo "Restart PHP-FPM"
-sudo service php8.5-fpm restart
+echo "Reload PHP-FPM"
+touch /tmp/fpmlock 2>/dev/null || true
+( flock -w 10 9 || exit 1
+    sudo service php8.5-fpm reload ) 9>/tmp/fpmlock
 
 echo "Run health check"
 for i in \$(seq 1 30); do

@@ -441,7 +441,7 @@ test('deploy script sets production env', function () {
     expect($content)->toContain('echo "Set APP_ENV=production and APP_DEBUG=false"');
     expect($content)->toContain("sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env");
     expect($content)->toContain("sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env");
-    expect($content)->toContain('APP_URL=https:\/\/$DOMAIN/');
+    expect($content)->toContain('APP_URL=https:\/\/$DOMAIN/" .env');
 });
 
 test('deploy script builds frontend assets', function () {

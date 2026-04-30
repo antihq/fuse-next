@@ -54,7 +54,7 @@ fi
 echo "Set APP_ENV=production and APP_DEBUG=false"
 sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo "APP_ENV=production" >> .env
 sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo "APP_DEBUG=false" >> .env
-sed -i 's/^APP_URL=.*/APP_URL=https:\/\/\$DOMAIN/' .env || echo "APP_URL=https://\$DOMAIN" >> .env
+sed -i "s/^APP_URL=.*/APP_URL=https:\/\/\$DOMAIN/" .env || echo "APP_URL=https://\$DOMAIN" >> .env
 
 echo "Generate APP_KEY"
 php artisan key:generate --ansi

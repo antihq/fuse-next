@@ -13,6 +13,7 @@ class SshKey extends Model
 {
     /** @use HasFactory<SshKeyFactory> */
     use HasFactory;
+
     protected static function booted(): void
     {
         static::creating(function (SshKey $key) {

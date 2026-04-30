@@ -39,7 +39,7 @@ chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
 SHELL;
 
-            $sshHardening = <<<SHELL
+            $sshHardening = <<<'SHELL'
 
 echo "Enhance SSH security"
 sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
@@ -47,7 +47,7 @@ echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 service ssh restart
 SHELL;
 
-            $fuseKeyCopy = <<<SHELL
+            $fuseKeyCopy = <<<'SHELL'
 
 cp /root/.ssh/authorized_keys /home/fuse/.ssh/authorized_keys
 

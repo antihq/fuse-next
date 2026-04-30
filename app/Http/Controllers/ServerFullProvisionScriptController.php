@@ -216,6 +216,7 @@ for version in 8.2 8.3 8.4 8.5; do
         php\$version-imagick \\
         php\$version-intl \\
         php\$version-mbstring \\
+        php\$version-opcache \\
         php\$version-readline \\
         php\$version-soap \\
         php\$version-sqlite3 \\
@@ -233,6 +234,15 @@ for version in 8.2 8.3 8.4 8.5; do
     sed -i "s/;listen\.owner.*/listen.owner = fuse/" /etc/php/\$version/fpm/pool.d/www.conf
     sed -i "s/;listen\.group.*/listen.group = fuse/" /etc/php/\$version/fpm/pool.d/www.conf
     sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/\$version/fpm/pool.d/www.conf
+
+    sed -i "s/;opcache.enable=.*/opcache.enable=1/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.memory_consumption=.*/opcache.memory_consumption=256/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=20000/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.validate_timestamps=.*/opcache.validate_timestamps=1/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.save_comments=.*/opcache.save_comments=1/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.fast_shutdown=.*/opcache.fast_shutdown=1/" /etc/php/\$version/fpm/php.ini
+    sed -i "s/;opcache.jit_buffer_size=.*/opcache.jit_buffer_size=128M/" /etc/php/\$version/fpm/php.ini
 
     systemctl enable php\$version-fpm
     service php\$version-fpm restart > /dev/null 2>&1 || true

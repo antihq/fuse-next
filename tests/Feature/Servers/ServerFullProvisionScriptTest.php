@@ -631,3 +631,48 @@ test('full provision script captures and reports fuse user public key', function
     expect($content)->toContain('FUSE_PUBLIC_KEY=$(cat /home/fuse/.ssh/id_rsa.pub)');
     expect($content)->toContain('"public_key":"\'"$FUSE_PUBLIC_KEY"\'"');
 });
+
+test('full provision script installs opcache extension for all php versions', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('php$version-opcache');
+});
+
+test('full provision script configures opcache settings in php ini', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('opcache.enable=1');
+    expect($content)->toContain('opcache.memory_consumption=256');
+    expect($content)->toContain('opcache.interned_strings_buffer=16');
+    expect($content)->toContain('opcache.max_accelerated_files=20000');
+    expect($content)->toContain('opcache.validate_timestamps=1');
+    expect($content)->toContain('opcache.save_comments=1');
+    expect($content)->toContain('opcache.fast_shutdown=1');
+    expect($content)->toContain('opcache.jit_buffer_size=128M');
+});

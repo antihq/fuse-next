@@ -89,7 +89,7 @@ cat >> "\$CADDY_CONFIG" << CADDY_EOF
 {$site->domain} {
     root * /home/fuse/{$site->domain}/public
     file_server
-    php_fastcgi unix//var/run/php/php8.5-fpm.sock
+    php_fastcgi unix//var/run/php/php{$site->php_version}-fpm.sock
 
     encode gzip
 
@@ -107,7 +107,7 @@ sudo service caddy reload
 echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true
 ( flock -w 10 9 || exit 1
-    sudo service php8.5-fpm reload ) 9>/tmp/fpmlock
+    sudo service php{$site->php_version}-fpm reload ) 9>/tmp/fpmlock
 
 echo "Run health check"
 for i in \$(seq 1 30); do

@@ -586,3 +586,32 @@ test('deploy script runs health check with retry loop', function () {
     expect($content)->toContain('reportError "Health check failed after 30 attempts"');
     expect($content)->toContain('sleep 2');
 });
+
+test('deploy script uses site php version for caddy and fpm', function (string $phpVersion) {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+        'php_version' => $phpVersion,
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain("php_fastcgi unix//var/run/php/php{$phpVersion}-fpm.sock");
+    expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
+})->with(['8.2', '8.3', '8.4']);

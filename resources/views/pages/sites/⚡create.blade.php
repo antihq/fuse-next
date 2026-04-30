@@ -18,6 +18,8 @@ new #[Title('Add Site')] class extends Component
 
     public string $repository = '';
 
+    public string $phpVersion = '8.5';
+
     public function mount(Server $server): void
     {
         $this->serverId = $server->id;
@@ -36,9 +38,10 @@ new #[Title('Add Site')] class extends Component
         $validated = $this->validate([
             'domain' => ['required', 'string'],
             'repository' => ['required', 'regex:#^(https?://|git@)[^\s]+$#'],
+            'phpVersion' => ['required', 'in:8.2,8.3,8.4,8.5'],
         ]);
 
-        $site = (new CreateSite)->handle($this->server, $validated['domain'], $validated['repository']);
+        $site = (new CreateSite)->handle($this->server, $validated['domain'], $validated['repository'], $validated['phpVersion']);
 
         $this->redirectRoute('sites.show', [$team->slug, $this->server, $site], navigate: true);
     }
@@ -87,6 +90,19 @@ new #[Title('Add Site')] class extends Component
                 data-test="add-site-repository"
             />
 
+            <flux:select
+                size="sm"
+                label="{{ __('PHP Version') }}"
+                wire:model="phpVersion"
+                required
+                data-test="add-site-php-version"
+            >
+                <flux:select.option value="8.5">PHP 8.5</flux:select.option>
+                <flux:select.option value="8.4">PHP 8.4</flux:select.option>
+                <flux:select.option value="8.3">PHP 8.3</flux:select.option>
+                <flux:select.option value="8.2">PHP 8.2</flux:select.option>
+            </flux:select>
+
             <flux:button type="submit" variant="primary" data-test="add-site-submit" color="blue" icon:trailing="arrow-right" size="sm">
                 {{ __('Add site') }}
             </flux:button>
@@ -101,6 +117,9 @@ new #[Title('Add Site')] class extends Component
 
                     <x-description.term>{{ __('Repository') }}</x-description.term>
                     <x-description.details>{{ __('HTTPS or SSH URL of a Git repository to clone') }}</x-description.details>
+
+                    <x-description.term>{{ __('PHP Version') }}</x-description.term>
+                    <x-description.details>{{ __('Select the PHP runtime for this site (8.2–8.5)') }}</x-description.details>
                 </x-description.list>
             </div>
             <p class="mt-3 text-sm/6">

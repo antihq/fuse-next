@@ -282,3 +282,30 @@ test('destroy script does not include deploy operations', function () {
     expect($content)->not->toContain('php artisan migrate');
     expect($content)->not->toContain('cat >> "$CADDY_CONFIG"');
 });
+
+test('destroy script uses site php version for fpm', function (string $phpVersion) {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'php_version' => $phpVersion,
+    ]);
+
+    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
+})->with(['8.2', '8.3', '8.4']);

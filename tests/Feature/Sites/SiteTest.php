@@ -34,9 +34,62 @@ test('sites can be created by owner', function () {
         'server_id' => $server->id,
         'domain' => 'example.com',
         'repository' => 'https://github.com/user/repo.git',
+        'php_version' => '8.5',
         'status' => SiteStatus::Pending->value,
     ]);
 });
+
+test('sites can be created with a custom php version', function (string $phpVersion) {
+    $owner = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $owner->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $this->actingAs($owner);
+
+    Livewire::test('pages::sites.create', ['server' => $server])
+        ->set('domain', 'example.com')
+        ->set('repository', 'https://github.com/user/repo.git')
+        ->set('phpVersion', $phpVersion)
+        ->call('create')
+        ->assertHasNoErrors()
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('sites', [
+        'server_id' => $server->id,
+        'domain' => 'example.com',
+        'php_version' => $phpVersion,
+    ]);
+})->with(['8.2', '8.3', '8.4']);
+
+test('site creation validates php version', function (string $phpVersion) {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::sites.create', ['server' => $server])
+        ->set('domain', 'example.com')
+        ->set('repository', 'https://github.com/user/repo.git')
+        ->set('phpVersion', $phpVersion)
+        ->call('create')
+        ->assertHasErrors(['phpVersion' => 'in']);
+
+    $this->assertDatabaseMissing('sites');
+})->with(['7.4', '8.0', '8.1', '9.0']);
 
 test('sites cannot be created by members', function () {
     $owner = User::factory()->create();

@@ -45,7 +45,7 @@ sudo service caddy reload
 echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true
 ( flock -w 10 9 || exit 1
-    sudo service php8.5-fpm reload ) 9>/tmp/fpmlock
+    sudo service php{$site->php_version}-fpm reload ) 9>/tmp/fpmlock
 
 echo "Remove deploy directory \$DEPLOY_DIR"
 if [ -d "\$DEPLOY_DIR" ]; then

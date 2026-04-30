@@ -17,6 +17,7 @@ set -euo pipefail
 REPORT_URL='{$callbackUrl}'
 DOMAIN='{$site->domain}'
 REPOSITORY='{$site->repository}'
+PHP='/usr/bin/php{$site->php_version}'
 DEPLOY_DIR="/home/fuse/\$DOMAIN"
 
 reportError() {
@@ -37,24 +38,24 @@ cd "\$DEPLOY_DIR"
 git pull "\$REPOSITORY"
 
 echo "Put application in maintenance mode"
-php artisan down
+\$PHP artisan down
 
 echo "Install Composer dependencies"
-composer install --optimize-autoloader --no-dev --no-interaction
+\$PHP /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction
 
 echo "Build frontend assets"
 npm install && npm run build
 
 echo "Run database migrations"
-php artisan migrate --force
+\$PHP artisan migrate --force
 
 echo "Create storage link"
-php artisan storage:link --force
+\$PHP artisan storage:link --force
 
 echo "Cache Laravel configuration"
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+\$PHP artisan config:cache
+\$PHP artisan route:cache
+\$PHP artisan view:cache
 
 echo "Set directory permissions"
 chmod -R 775 storage bootstrap/cache
@@ -66,7 +67,7 @@ touch /tmp/fpmlock 2>/dev/null || true
     sudo service php{$site->php_version}-fpm reload ) 9>/tmp/fpmlock
 
 echo "Bring application back up"
-php artisan up
+\$PHP artisan up
 
 echo "Run health check"
 curl -sf -o /dev/null https://\$DOMAIN/up || reportError "Health check failed"

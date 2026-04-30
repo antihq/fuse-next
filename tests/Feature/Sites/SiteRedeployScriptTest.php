@@ -163,7 +163,7 @@ test('redeploy script includes composer install', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Install Composer dependencies"');
-    expect($content)->toContain('composer install --optimize-autoloader --no-dev --no-interaction');
+    expect($content)->toContain('$PHP /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction');
 });
 
 test('redeploy script does not include caddy config', function () {
@@ -305,6 +305,7 @@ test('redeploy script does not generate app key', function () {
 
     expect($content)->not->toContain('echo "Generate APP_KEY"');
     expect($content)->not->toContain('php artisan key:generate');
+    expect($content)->not->toContain('$PHP artisan key:generate');
 });
 
 test('redeploy script does not copy env example', function () {
@@ -358,7 +359,7 @@ test('redeploy script puts app in maintenance mode', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Put application in maintenance mode"');
-    expect($content)->toContain('php artisan down');
+    expect($content)->toContain('$PHP artisan down');
 });
 
 test('redeploy script builds frontend assets', function () {
@@ -412,7 +413,7 @@ test('redeploy script runs migrations', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Run database migrations"');
-    expect($content)->toContain('php artisan migrate --force');
+    expect($content)->toContain('$PHP artisan migrate --force');
 });
 
 test('redeploy script creates storage link', function () {
@@ -439,7 +440,7 @@ test('redeploy script creates storage link', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Create storage link"');
-    expect($content)->toContain('php artisan storage:link --force');
+    expect($content)->toContain('$PHP artisan storage:link --force');
 });
 
 test('redeploy script caches laravel config', function () {
@@ -466,9 +467,9 @@ test('redeploy script caches laravel config', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Cache Laravel configuration"');
-    expect($content)->toContain('php artisan config:cache');
-    expect($content)->toContain('php artisan route:cache');
-    expect($content)->toContain('php artisan view:cache');
+    expect($content)->toContain('$PHP artisan config:cache');
+    expect($content)->toContain('$PHP artisan route:cache');
+    expect($content)->toContain('$PHP artisan view:cache');
 });
 
 test('redeploy script restarts php fpm', function () {
@@ -523,7 +524,7 @@ test('redeploy script brings app back up', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Bring application back up"');
-    expect($content)->toContain('php artisan up');
+    expect($content)->toContain('$PHP artisan up');
 });
 
 test('redeploy script runs health check', function () {
@@ -635,5 +636,6 @@ test('redeploy script uses site php version for fpm', function (string $phpVersi
 
     $content = $response->getContent();
 
+    expect($content)->toContain("PHP='/usr/bin/php{$phpVersion}'");
     expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
 })->with(['8.2', '8.3', '8.4']);

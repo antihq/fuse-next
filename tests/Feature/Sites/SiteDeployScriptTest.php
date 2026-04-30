@@ -161,7 +161,7 @@ test('deploy script includes composer install', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Install Composer dependencies"');
-    expect($content)->toContain('composer install --optimize-autoloader --no-dev --no-interaction');
+    expect($content)->toContain('$PHP /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction');
 });
 
 test('deploy script includes caddy config', function () {
@@ -303,7 +303,7 @@ test('deploy script generates app key', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Generate APP_KEY"');
-    expect($content)->toContain('php artisan key:generate --ansi');
+    expect($content)->toContain('$PHP artisan key:generate --ansi');
 });
 
 test('deploy script creates sqlite database', function () {
@@ -358,7 +358,7 @@ test('deploy script runs database migrations', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Run database migrations"');
-    expect($content)->toContain('php artisan migrate --force');
+    expect($content)->toContain('$PHP artisan migrate --force');
 });
 
 test('deploy script copies env example', function () {
@@ -495,7 +495,7 @@ test('deploy script creates storage link', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Create storage link"');
-    expect($content)->toContain('php artisan storage:link');
+    expect($content)->toContain('$PHP artisan storage:link');
 });
 
 test('deploy script caches laravel config', function () {
@@ -522,9 +522,9 @@ test('deploy script caches laravel config', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Cache Laravel configuration"');
-    expect($content)->toContain('php artisan config:cache');
-    expect($content)->toContain('php artisan route:cache');
-    expect($content)->toContain('php artisan view:cache');
+    expect($content)->toContain('$PHP artisan config:cache');
+    expect($content)->toContain('$PHP artisan route:cache');
+    expect($content)->toContain('$PHP artisan view:cache');
 });
 
 test('deploy script restarts php fpm', function () {
@@ -612,6 +612,7 @@ test('deploy script uses site php version for caddy and fpm', function (string $
 
     $content = $response->getContent();
 
+    expect($content)->toContain("PHP='/usr/bin/php{$phpVersion}'");
     expect($content)->toContain("php_fastcgi unix//var/run/php/php{$phpVersion}-fpm.sock");
     expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
 })->with(['8.2', '8.3', '8.4']);

@@ -17,6 +17,7 @@ set -euo pipefail
 REPORT_URL='{$callbackUrl}'
 DOMAIN='{$site->domain}'
 REPOSITORY='{$site->repository}'
+PHP='/usr/bin/php{$site->php_version}'
 DEPLOY_DIR="/home/fuse/\$DOMAIN"
 
 reportError() {
@@ -42,7 +43,7 @@ git clone "\$REPOSITORY" "\$DEPLOY_DIR"
 cd "\$DEPLOY_DIR"
 
 echo "Install Composer dependencies"
-composer install --optimize-autoloader --no-dev --no-interaction
+\$PHP /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction
 
 echo "Copy .env.example to .env"
 if [ -f .env.example ]; then
@@ -57,25 +58,25 @@ sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo "APP_DEBUG=false" >> .env
 sed -i "s/^APP_URL=.*/APP_URL=https:\/\/\$DOMAIN/" .env || echo "APP_URL=https://\$DOMAIN" >> .env
 
 echo "Generate APP_KEY"
-php artisan key:generate --ansi
+\$PHP artisan key:generate --ansi
 
 echo "Create SQLite database"
 mkdir -p database
 touch database/database.sqlite
 
 echo "Run database migrations"
-php artisan migrate --force
+\$PHP artisan migrate --force
 
 echo "Build frontend assets"
 npm install && npm run build
 
 echo "Create storage link"
-php artisan storage:link
+\$PHP artisan storage:link
 
 echo "Cache Laravel configuration"
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+\$PHP artisan config:cache
+\$PHP artisan route:cache
+\$PHP artisan view:cache
 
 echo "Set directory permissions"
 chmod -R 775 storage bootstrap/cache

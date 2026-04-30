@@ -275,8 +275,8 @@ test('deploy script sets permissions', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Set directory permissions"');
-    expect($content)->toContain('chmod -R 775 storage bootstrap/cache');
-    expect($content)->toContain('chown -R fuse:fuse storage bootstrap/cache');
+    expect($content)->toContain('chmod -R 775 storage bootstrap/cache database');
+    expect($content)->toContain('chown -R fuse:fuse storage bootstrap/cache database');
 });
 
 test('deploy script generates app key', function () {

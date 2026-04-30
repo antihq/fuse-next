@@ -65,12 +65,12 @@ sed -i '/^DB_DATABASE=/d' .env
 sed -i '/^DB_USERNAME=/d' .env
 sed -i '/^DB_PASSWORD=/d' .env
 
-echo "Generate APP_KEY"
-\$PHP artisan key:generate --ansi
-
 echo "Create SQLite database"
 mkdir -p database
 touch database/database.sqlite
+
+echo "Generate APP_KEY"
+\$PHP artisan key:generate --ansi
 
 echo "Run database migrations"
 \$PHP artisan migrate --force
@@ -87,8 +87,8 @@ echo "Cache Laravel configuration"
 \$PHP artisan view:cache
 
 echo "Set directory permissions"
-chmod -R 775 storage bootstrap/cache
-chown -R fuse:fuse storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache database
+chown -R fuse:fuse storage bootstrap/cache database
 
 echo "Generate Caddy configuration"
 CADDY_CONFIG="/etc/caddy/sites.caddy"

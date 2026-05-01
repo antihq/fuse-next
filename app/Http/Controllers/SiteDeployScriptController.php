@@ -124,7 +124,7 @@ SHELL;
 
 echo "Configure queue supervisor"
 SUPERVISOR_CONF="/etc/supervisor/conf.d/\${DOMAIN}-worker.conf"
-cat > "\$SUPERVISOR_CONF" << 'SUPERVISOR_EOF'
+sudo tee "\$SUPERVISOR_CONF" > /dev/null << 'SUPERVISOR_EOF'
 [program:{$site->domain}-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=/usr/bin/php{$site->php_version} /home/fuse/{$site->domain}/artisan queue:work database --sleep=3 --tries=3 --max-time=3600

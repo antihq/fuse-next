@@ -195,6 +195,33 @@ test('queue supervisor setup script writes config to correct path', function () 
     expect($content)->toContain('SUPERVISOR_CONF="/etc/supervisor/conf.d/${DOMAIN}-worker.conf"');
 });
 
+test('queue supervisor setup script uses sudo tee to write config', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->queueEnabled()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('sudo tee "$SUPERVISOR_CONF" > /dev/null');
+    expect($content)->not->toContain('cat > "$SUPERVISOR_CONF"');
+});
+
 test('queue supervisor teardown script is returned when queue disabled', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
@@ -248,7 +275,7 @@ test('queue supervisor teardown script removes config file', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Remove supervisor configuration"');
-    expect($content)->toContain('rm "$SUPERVISOR_CONF"');
+    expect($content)->toContain('sudo rm "$SUPERVISOR_CONF"');
     expect($content)->toContain('sudo supervisorctl reread');
     expect($content)->toContain('sudo supervisorctl update');
 });

@@ -369,3 +369,56 @@ test('destroy script stops and removes supervisor when queue enabled', function 
     expect($content)->toContain('sudo supervisorctl reread');
     expect($content)->toContain('sudo supervisorctl update');
 });
+
+test('destroy script uses sudo rm to remove supervisor config when queue enabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->queueEnabled()->create([
+        'server_id' => $server->id,
+        'domain' => 'myapp.com',
+    ]);
+
+    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('sudo rm "$SUPERVISOR_CONF"');
+});
+
+test('destroy script handles missing supervisor config gracefully when queue enabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->queueEnabled()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('No supervisor configuration found, skipping');
+});

@@ -316,6 +316,9 @@ service caddy start
 
 echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service caddy reload" >> /etc/sudoers.d/caddy
 echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service php*-fpm reload" >> /etc/sudoers.d/php-fpm
+echo "fuse ALL=(root) NOPASSWD: /usr/bin/supervisorctl" >> /etc/sudoers.d/supervisor
+echo "fuse ALL=(root) NOPASSWD: /usr/bin/tee /etc/supervisor/conf.d/*" >> /etc/sudoers.d/supervisor
+echo "fuse ALL=(root) NOPASSWD: /usr/bin/rm /etc/supervisor/conf.d/*" >> /etc/sudoers.d/supervisor
 
 echo "Configure Supervisor"
 systemctl enable supervisor

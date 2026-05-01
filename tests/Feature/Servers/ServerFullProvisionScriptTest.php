@@ -676,3 +676,47 @@ test('full provision script configures opcache settings in php ini', function ()
     expect($content)->toContain('opcache.fast_shutdown=1');
     expect($content)->toContain('opcache.jit_buffer_size=128M');
 });
+
+test('full provision script configures sudoers rules for fuse user', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/sbin/service caddy reload');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/sbin/service php*-fpm reload');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/supervisorctl');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/tee /etc/supervisor/conf.d/*');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/rm /etc/supervisor/conf.d/*');
+});
+
+test('full provision script enables and starts supervisor', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Configure Supervisor"');
+    expect($content)->toContain('systemctl enable supervisor');
+    expect($content)->toContain('systemctl start supervisor');
+});

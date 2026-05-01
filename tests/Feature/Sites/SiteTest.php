@@ -1284,3 +1284,51 @@ test('admin can toggle queue supervisor', function () {
     $site->refresh();
     expect($site->queue_enabled)->toBeTrue();
 });
+
+test('queue supervisor section is not visible for failed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->failed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Queue Supervisor');
+    $response->assertDontSee('queue-supervisor-script');
+});
+
+test('queue supervisor section is not visible for deleting site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deleting()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Queue Supervisor');
+    $response->assertDontSee('queue-supervisor-script');
+});

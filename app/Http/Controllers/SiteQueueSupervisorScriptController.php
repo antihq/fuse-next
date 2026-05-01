@@ -30,7 +30,7 @@ echo "=== Setting up queue supervisor for \$DOMAIN ==="
 SUPERVISOR_CONF="/etc/supervisor/conf.d/\${DOMAIN}-worker.conf"
 
 echo "Create supervisor configuration"
-cat > "\$SUPERVISOR_CONF" << 'EOF'
+sudo tee "\$SUPERVISOR_CONF" > /dev/null << 'EOF'
 [program:{$domain}-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=/usr/bin/php{$phpVersion} /home/fuse/{$domain}/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
@@ -79,7 +79,7 @@ sudo supervisorctl stop {$domain}-worker:* 2>/dev/null || true
 
 echo "Remove supervisor configuration"
 if [ -f "\$SUPERVISOR_CONF" ]; then
-    rm "\$SUPERVISOR_CONF"
+    sudo rm "\$SUPERVISOR_CONF"
     echo "Configuration removed"
 else
     echo "No configuration found, skipping"

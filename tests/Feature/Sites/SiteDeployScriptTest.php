@@ -710,3 +710,32 @@ test('deploy script includes supervisor config when queue enabled', function () 
     expect($content)->toContain('sudo supervisorctl start myapp.com-worker:*');
     expect($content)->toContain('stdout_logfile=/home/fuse/myapp.com/storage/logs/worker.log');
 });
+
+test('deploy script uses sudo tee to write supervisor config when queue enabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->queueEnabled()->create([
+        'server_id' => $server->id,
+        'domain' => 'myapp.com',
+        'php_version' => '8.4',
+    ]);
+
+    $url = URL::signedRoute('sites.deploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('sudo tee "$SUPERVISOR_CONF" > /dev/null');
+    expect($content)->not->toContain('cat > "$SUPERVISOR_CONF"');
+});

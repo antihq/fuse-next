@@ -38,7 +38,7 @@ sudo supervisorctl stop {$site->domain}-worker:* 2>/dev/null || true
 echo "Remove supervisor configuration"
 SUPERVISOR_CONF="/etc/supervisor/conf.d/\${DOMAIN}-worker.conf"
 if [ -f "\$SUPERVISOR_CONF" ]; then
-    rm "\$SUPERVISOR_CONF"
+    sudo rm "\$SUPERVISOR_CONF"
     sudo supervisorctl reread
     sudo supervisorctl update
     echo "Supervisor configuration removed"

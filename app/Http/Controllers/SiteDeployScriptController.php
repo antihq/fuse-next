@@ -120,7 +120,7 @@ touch /tmp/fpmlock 2>/dev/null || true
 
 echo "Run health check"
 for i in \$(seq 1 30); do
-    if curl -sf -o /dev/null https://\$DOMAIN/up; then
+    if curl -sf -o /dev/null https://\$DOMAIN/up || curl -sf -o /dev/null https://\$DOMAIN; then
         echo "Health check passed"
         break
     fi

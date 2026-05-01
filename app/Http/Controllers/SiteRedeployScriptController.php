@@ -58,8 +58,8 @@ echo "Cache Laravel configuration"
 \$PHP artisan view:cache
 
 echo "Set directory permissions"
-chmod -R 775 storage bootstrap/cache
-chown -R fuse:fuse storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache database
+chown -R fuse:fuse storage bootstrap/cache database
 
 echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true
@@ -70,7 +70,7 @@ echo "Bring application back up"
 \$PHP artisan up
 
 echo "Run health check"
-curl -sf -o /dev/null https://\$DOMAIN/up || reportError "Health check failed"
+curl -sf -o /dev/null https://\$DOMAIN/up || curl -sf -o /dev/null https://\$DOMAIN || reportError "Health check failed"
 
 echo "=== Redeployment completed successfully ==="
 curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true

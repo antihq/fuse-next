@@ -613,7 +613,7 @@ test('deploy script runs health check with retry loop', function () {
 
     expect($content)->toContain('echo "Run health check"');
     expect($content)->toContain('for i in $(seq 1 30)');
-    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up');
+    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up || curl -sf -o /dev/null https://$DOMAIN');
     expect($content)->toContain('echo "Health check passed"');
     expect($content)->toContain('reportError "Health check failed after 30 attempts"');
     expect($content)->toContain('sleep 2');

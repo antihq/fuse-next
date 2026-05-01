@@ -276,8 +276,8 @@ test('redeploy script sets permissions', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Set directory permissions"');
-    expect($content)->toContain('chmod -R 775 storage bootstrap/cache');
-    expect($content)->toContain('chown -R fuse:fuse storage bootstrap/cache');
+    expect($content)->toContain('chmod -R 775 storage bootstrap/cache database');
+    expect($content)->toContain('chown -R fuse:fuse storage bootstrap/cache database');
 });
 
 test('redeploy script does not generate app key', function () {
@@ -552,7 +552,7 @@ test('redeploy script runs health check', function () {
     $content = $response->getContent();
 
     expect($content)->toContain('echo "Run health check"');
-    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up');
+    expect($content)->toContain('curl -sf -o /dev/null https://$DOMAIN/up || curl -sf -o /dev/null https://$DOMAIN');
     expect($content)->toContain('|| reportError "Health check failed"');
 });
 

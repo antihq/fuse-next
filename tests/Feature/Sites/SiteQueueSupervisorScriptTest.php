@@ -8,7 +8,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\URL;
 
-test('destroy script can be retrieved with signed url', function () {
+test('queue supervisor setup script can be retrieved with signed url', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -19,12 +19,12 @@ test('destroy script can be retrieved with signed url', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
         'domain' => 'example.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -32,10 +32,9 @@ test('destroy script can be retrieved with signed url', function () {
     $response->assertHeader('Content-Type', 'text/x-shellscript; charset=utf-8');
     $response->assertSee('#!/bin/bash');
     $response->assertSee('set -euo pipefail');
-    $response->assertSee('Starting site removal');
 });
 
-test('destroy script cannot be accessed without signature', function () {
+test('queue supervisor script cannot be accessed without signature', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -46,18 +45,18 @@ test('destroy script cannot be accessed without signature', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
     ]);
 
-    $url = route('sites.destroy-script', ['site' => $site]);
+    $url = route('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
     $response->assertStatus(403);
 });
 
-test('destroy script rejects expired signature', function () {
+test('queue supervisor script rejects expired signature', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -68,18 +67,18 @@ test('destroy script rejects expired signature', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
     ]);
 
-    $url = URL::temporarySignedRoute('sites.destroy-script', now()->subMinutes(5), ['site' => $site]);
+    $url = URL::temporarySignedRoute('sites.queue-supervisor-script', now()->subMinutes(5), ['site' => $site]);
 
     $response = $this->get($url);
 
     $response->assertStatus(403);
 });
 
-test('destroy script includes site domain', function () {
+test('queue supervisor setup script includes supervisor config', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -90,12 +89,13 @@ test('destroy script includes site domain', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
         'domain' => 'myapp.com',
+        'php_version' => '8.4',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -103,11 +103,15 @@ test('destroy script includes site domain', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain("DOMAIN='myapp.com'");
-    expect($content)->toContain('DEPLOY_DIR="/home/fuse/$DOMAIN"');
+    expect($content)->toContain('[program:myapp.com-worker]');
+    expect($content)->toContain('command=/usr/bin/php8.4 /home/fuse/myapp.com/artisan queue:work database --sleep=3 --tries=3 --max-time=3600');
+    expect($content)->toContain('stdout_logfile=/home/fuse/myapp.com/storage/logs/worker.log');
+    expect($content)->toContain('user=fuse');
+    expect($content)->toContain('autostart=true');
+    expect($content)->toContain('autorestart=true');
 });
 
-test('destroy script includes destroy callback url', function () {
+test('queue supervisor setup script includes supervisorctl commands', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -118,69 +122,12 @@ test('destroy script includes destroy callback url', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $callbackUrl = URL::signedRoute('sites.destroy-callback', ['site' => $site]);
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "=== Site removal completed successfully ==="');
-    expect($content)->toContain('{"status":"destroyed"}');
-    expect($content)->toContain($callbackUrl);
-});
-
-test('destroy script includes error handling', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('reportError()');
-    expect($content)->toContain('Site removal failed');
-    expect($content)->toContain('trap \'reportError "Script failed at line $LINENO"\' ERR');
-});
-
-test('destroy script removes caddy config', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
         'domain' => 'example.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -188,13 +135,12 @@ test('destroy script removes caddy config', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Remove Caddy configuration for $DOMAIN"');
-    expect($content)->toContain('CADDY_CONFIG="/etc/caddy/sites.caddy"');
-    expect($content)->toContain("sed -i '/^example.com {/,/^}/d'");
-    expect($content)->toContain('echo "Removed Caddy config block"');
+    expect($content)->toContain('sudo supervisorctl reread');
+    expect($content)->toContain('sudo supervisorctl update');
+    expect($content)->toContain('sudo supervisorctl start example.com-worker:*');
 });
 
-test('destroy script removes deploy directory', function () {
+test('queue supervisor setup script ensures log directory', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -205,11 +151,11 @@ test('destroy script removes deploy directory', function () {
         'status' => ServerStatus::Provisioned,
     ]);
 
-    $site = Site::factory()->create([
+    $site = Site::factory()->queueEnabled()->create([
         'server_id' => $server->id,
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -217,128 +163,12 @@ test('destroy script removes deploy directory', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Remove deploy directory $DEPLOY_DIR"');
-    expect($content)->toContain('rm -rf "$DEPLOY_DIR"');
-    expect($content)->toContain('echo "Directory removed"');
+    expect($content)->toContain('echo "Ensure log directory exists"');
+    expect($content)->toContain('mkdir -p "$DEPLOY_DIR/storage/logs"');
+    expect($content)->toContain('chown -R fuse:fuse "$DEPLOY_DIR/storage/logs"');
 });
 
-test('destroy script reloads caddy and restarts php fpm', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain('echo "Reload Caddy"');
-    expect($content)->toContain('sudo service caddy reload');
-    expect($content)->toContain('echo "Reload PHP-FPM"');
-    expect($content)->toContain('sudo service php8.5-fpm reload');
-    expect($content)->toContain('flock -w 10 9');
-});
-
-test('destroy script does not include deploy operations', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->not->toContain('git clone');
-    expect($content)->not->toContain('composer install');
-    expect($content)->not->toContain('npm install');
-    expect($content)->not->toContain('php artisan key:generate');
-    expect($content)->not->toContain('php artisan migrate');
-    expect($content)->not->toContain('cat >> "$CADDY_CONFIG"');
-});
-
-test('destroy script uses site php version for fpm', function (string $phpVersion) {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-        'php_version' => $phpVersion,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
-})->with(['8.2', '8.3', '8.4']);
-
-test('destroy script does not remove supervisor when queue disabled', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $user->switchTeam($team);
-
-    $server = Server::factory()->create([
-        'team_id' => $team->id,
-        'status' => ServerStatus::Provisioned,
-    ]);
-
-    $site = Site::factory()->create([
-        'server_id' => $server->id,
-    ]);
-
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
-
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    $content = $response->getContent();
-
-    expect($content)->not->toContain('echo "Stop queue supervisor"');
-    expect($content)->not->toContain('echo "Remove supervisor configuration"');
-    expect($content)->not->toContain('supervisorctl');
-});
-
-test('destroy script stops and removes supervisor when queue enabled', function () {
+test('queue supervisor setup script writes config to correct path', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
@@ -354,7 +184,7 @@ test('destroy script stops and removes supervisor when queue enabled', function 
         'domain' => 'myapp.com',
     ]);
 
-    $url = URL::signedRoute('sites.destroy-script', ['site' => $site]);
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
 
     $response = $this->get($url);
 
@@ -362,10 +192,147 @@ test('destroy script stops and removes supervisor when queue enabled', function 
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Stop queue supervisor"');
-    expect($content)->toContain('sudo supervisorctl stop myapp.com-worker:*');
-    expect($content)->toContain('echo "Remove supervisor configuration"');
     expect($content)->toContain('SUPERVISOR_CONF="/etc/supervisor/conf.d/${DOMAIN}-worker.conf"');
+});
+
+test('queue supervisor teardown script is returned when queue disabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'domain' => 'myapp.com',
+    ]);
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "=== Removing queue supervisor for $DOMAIN ==="');
+    expect($content)->toContain('echo "Stop queue worker"');
+    expect($content)->toContain('sudo supervisorctl stop myapp.com-worker:*');
+});
+
+test('queue supervisor teardown script removes config file', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Remove supervisor configuration"');
+    expect($content)->toContain('rm "$SUPERVISOR_CONF"');
     expect($content)->toContain('sudo supervisorctl reread');
     expect($content)->toContain('sudo supervisorctl update');
+});
+
+test('queue supervisor teardown script handles missing config gracefully', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "No configuration found, skipping"');
+});
+
+test('queue supervisor teardown script does not include setup operations', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->not->toContain('[program:');
+    expect($content)->not->toContain('queue:work');
+    expect($content)->not->toContain('supervisorctl start');
+    expect($content)->not->toContain('mkdir -p');
+});
+
+test('default site without queue enabled returns teardown script', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    expect($site->queue_enabled)->toBeFalse();
+
+    $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('Removing queue supervisor');
+    expect($content)->not->toContain('Setting up queue supervisor');
 });

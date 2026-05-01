@@ -1080,3 +1080,207 @@ test('admin can mark deployed', function () {
     $site->refresh();
     expect($site->status)->toBe(SiteStatus::Deployed);
 });
+
+test('queue supervisor section is visible for deployed site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertSee('Queue Supervisor');
+    $response->assertSee('Enable queue worker');
+    $response->assertSee('queue-supervisor-script');
+});
+
+test('queue supervisor section is not visible for pending site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+        'status' => SiteStatus::Pending,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Queue Supervisor');
+    $response->assertDontSee('queue-supervisor-script');
+});
+
+test('queue supervisor section is not visible for deploying site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deploying()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('sites.show', ['current_team' => $team->slug, 'server' => $server->id, 'site' => $site->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Queue Supervisor');
+});
+
+test('toggle queue supervisor enables queue and saves', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    expect($site->queue_enabled)->toBeFalse();
+
+    Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->set('queueEnabled', true)
+        ->call('toggleQueueSupervisor');
+
+    $site->refresh();
+    expect($site->queue_enabled)->toBeTrue();
+});
+
+test('toggle queue supervisor disables queue and saves', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->queueEnabled()->create([
+        'server_id' => $server->id,
+    ]);
+
+    expect($site->queue_enabled)->toBeTrue();
+
+    Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->set('queueEnabled', false)
+        ->call('toggleQueueSupervisor');
+
+    $site->refresh();
+    expect($site->queue_enabled)->toBeFalse();
+});
+
+test('toggle queue supervisor is forbidden for members', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $member->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->set('queueEnabled', true)
+        ->call('toggleQueueSupervisor')
+        ->assertForbidden();
+
+    $site->refresh();
+    expect($site->queue_enabled)->toBeFalse();
+});
+
+test('queue enabled state syncs on refresh site', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $livewire = Livewire::actingAs($user)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site]);
+
+    $livewire->assertSet('queueEnabled', false);
+
+    $site->update(['queue_enabled' => true]);
+
+    $livewire->call('refreshSite');
+
+    $livewire->assertSet('queueEnabled', true);
+});
+
+test('admin can toggle queue supervisor', function () {
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+    $admin->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->deployed()->create([
+        'server_id' => $server->id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::sites.show', ['server' => $server, 'site' => $site])
+        ->set('queueEnabled', true)
+        ->call('toggleQueueSupervisor');
+
+    $site->refresh();
+    expect($site->queue_enabled)->toBeTrue();
+});

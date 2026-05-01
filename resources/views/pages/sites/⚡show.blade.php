@@ -20,11 +20,14 @@ new #[Title('Site Details')] class extends Component
 
     public Site $site;
 
+    public bool $queueEnabled = false;
+
     public function mount(Server $server, Site $site): void
     {
         $this->serverId = $server->id;
         $this->server = $server;
         $this->site = $site;
+        $this->queueEnabled = $site->queue_enabled;
 
         $team = Auth::user()->currentTeam;
 
@@ -97,6 +100,23 @@ new #[Title('Site Details')] class extends Component
     public function refreshSite(): void
     {
         $this->site->refresh();
+        $this->queueEnabled = $this->site->queue_enabled;
+    }
+
+    public function toggleQueueSupervisor(): void
+    {
+        $this->authorize('update', [Site::class, $this->team, $this->site]);
+
+        $this->site->queue_enabled = $this->queueEnabled;
+        $this->site->save();
+    }
+
+    #[Computed]
+    public function queueSupervisorCommand(): string
+    {
+        $url = URL::signedRoute('sites.queue-supervisor-script', ['site' => $this->site]);
+
+        return "wget --no-verbose -O - {$url} | bash";
     }
 }; ?>
 
@@ -263,6 +283,33 @@ new #[Title('Site Details')] class extends Component
                     copyable
                     class="font-mono"
                 />
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center gap-3">
+                <flux:heading class="text-nowrap">Queue Supervisor</flux:heading>
+                <flux:separator />
+            </div>
+
+            <div class="mt-1 text-sm space-y-3">
+                <p class="max-w-prose">
+                    Enable a Supervisor-managed queue worker for this site. The worker will run <code>php artisan queue:work</code> and auto-restart on failure.
+                </p>
+
+                <flux:switch wire:model.live="queueEnabled" wire:change="toggleQueueSupervisor" label="Enable queue worker" size="sm" />
+
+                <flux:input
+                    size="sm"
+                    :value="$this->queueSupervisorCommand"
+                    readonly
+                    copyable
+                    class="font-mono"
+                />
+
+                <p class="text-sm/6 max-w-prose">
+                    Run this command on your server to {{ $queueEnabled ? 'configure and start' : 'stop' }} the queue worker{{ $queueEnabled ? '' : ' and remove the Supervisor configuration' }}.
+                </p>
             </div>
         </div>
     @endif

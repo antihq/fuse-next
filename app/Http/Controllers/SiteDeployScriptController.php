@@ -117,22 +117,51 @@ echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true
 ( flock -w 10 9 || exit 1
     sudo service php{$site->php_version}-fpm reload ) 9>/tmp/fpmlock
+SHELL;
+
+        if ($site->queue_enabled) {
+            $script .= <<<SHELL
+
+echo "Configure queue supervisor"
+SUPERVISOR_CONF="/etc/supervisor/conf.d/\${DOMAIN}-worker.conf"
+cat > "\$SUPERVISOR_CONF" << 'SUPERVISOR_EOF'
+[program:{$site->domain}-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=/usr/bin/php{$site->php_version} /home/fuse/{$site->domain}/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=fuse
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/home/fuse/{$site->domain}/storage/logs/worker.log
+stopwaitsecs=3600
+SUPERVISOR_EOF
+
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start {$site->domain}-worker:*
+SHELL;
+        }
+
+        $script .= <<<'SHELL'
 
 echo "Run health check"
-for i in \$(seq 1 30); do
-    if curl -sf -o /dev/null https://\$DOMAIN/up || curl -sf -o /dev/null https://\$DOMAIN; then
+for i in $(seq 1 30); do
+    if curl -sf -o /dev/null https://$DOMAIN/up || curl -sf -o /dev/null https://$DOMAIN; then
         echo "Health check passed"
         break
     fi
-    if [ \$i -eq 30 ]; then
+    if [ $i -eq 30 ]; then
         reportError "Health check failed after 30 attempts"
     fi
-    echo "Health check attempt \$i failed, retrying in 2s..."
+    echo "Health check attempt $i failed, retrying in 2s..."
     sleep 2
 done
 
 echo "=== Deployment completed successfully ==="
-curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true
+curl -s -X POST "$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true
 SHELL;
 
         return response($script, 200, ['Content-Type' => 'text/x-shellscript']);

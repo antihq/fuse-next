@@ -27,6 +27,28 @@ reportError() {
 trap 'reportError "Script failed at line \$LINENO"' ERR
 
 echo "=== Starting site removal: \$DOMAIN ==="
+SHELL;
+
+        if ($site->queue_enabled) {
+            $script .= <<<SHELL
+
+echo "Stop queue supervisor"
+sudo supervisorctl stop {$site->domain}-worker:* 2>/dev/null || true
+
+echo "Remove supervisor configuration"
+SUPERVISOR_CONF="/etc/supervisor/conf.d/\${DOMAIN}-worker.conf"
+if [ -f "\$SUPERVISOR_CONF" ]; then
+    rm "\$SUPERVISOR_CONF"
+    sudo supervisorctl reread
+    sudo supervisorctl update
+    echo "Supervisor configuration removed"
+else
+    echo "No supervisor configuration found, skipping"
+fi
+SHELL;
+        }
+
+        $script .= <<<SHELL
 
 echo "Remove Caddy configuration for \$DOMAIN"
 CADDY_CONFIG="/etc/caddy/sites.caddy"

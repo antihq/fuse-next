@@ -17,6 +17,7 @@ class SiteFactory extends Factory
             'server_id' => Server::factory(),
             'domain' => $this->faker->domainName,
             'repository' => 'https://github.com/'.$this->faker->slug.'/'.$this->faker->slug.'.git',
+            'queue_enabled' => false,
             'status' => SiteStatus::Pending->value,
         ];
     }
@@ -46,6 +47,13 @@ class SiteFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'deleting',
+        ]);
+    }
+
+    public function queueEnabled(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'queue_enabled' => true,
         ]);
     }
 }

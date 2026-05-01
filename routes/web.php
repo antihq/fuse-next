@@ -6,6 +6,7 @@ use App\Http\Controllers\SiteDeployCallbackController;
 use App\Http\Controllers\SiteDeployScriptController;
 use App\Http\Controllers\SiteDestroyCallbackController;
 use App\Http\Controllers\SiteDestroyScriptController;
+use App\Http\Controllers\SiteQueueSupervisorScriptController;
 use App\Http\Controllers\SiteRedeployScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,9 @@ Route::middleware('signed')->get('sites/{site}/deploy-script', SiteDeployScriptC
 
 Route::middleware('signed')->get('sites/{site}/redeploy-script', SiteRedeployScriptController::class)
     ->name('sites.redeploy-script');
+
+Route::middleware('signed')->get('sites/{site}/queue-supervisor-script', SiteQueueSupervisorScriptController::class)
+    ->name('sites.queue-supervisor-script');
 
 Route::middleware('signed')->post('sites/{site}/deploy-callback', SiteDeployCallbackController::class)
     ->name('sites.deploy-callback');

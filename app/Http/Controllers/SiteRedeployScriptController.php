@@ -65,15 +65,26 @@ echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true
 ( flock -w 10 9 || exit 1
     sudo service php{$site->php_version}-fpm reload ) 9>/tmp/fpmlock
+SHELL;
+
+        if ($site->queue_enabled) {
+            $script .= <<<SHELL
+
+echo "Restart queue supervisor"
+sudo supervisorctl restart {$site->domain}-worker:*
+SHELL;
+        }
+
+        $script .= <<<'SHELL'
 
 echo "Bring application back up"
-\$PHP artisan up
+$PHP artisan up
 
 echo "Run health check"
-curl -sf -o /dev/null https://\$DOMAIN/up || curl -sf -o /dev/null https://\$DOMAIN || reportError "Health check failed"
+curl -sf -o /dev/null https://$DOMAIN/up || curl -sf -o /dev/null https://$DOMAIN || reportError "Health check failed"
 
 echo "=== Redeployment completed successfully ==="
-curl -s -X POST "\$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true
+curl -s -X POST "$REPORT_URL" -H 'Content-Type: application/json' -d '{"status":"deployed"}' || true
 SHELL;
 
         return response($script, 200, ['Content-Type' => 'text/x-shellscript']);

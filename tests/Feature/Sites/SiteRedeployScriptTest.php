@@ -639,3 +639,58 @@ test('redeploy script uses site php version for fpm', function (string $phpVersi
     expect($content)->toContain("PHP='/usr/bin/php{$phpVersion}'");
     expect($content)->toContain("sudo service php{$phpVersion}-fpm reload");
 })->with(['8.2', '8.3', '8.4']);
+
+test('redeploy script does not restart supervisor when queue disabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->create([
+        'server_id' => $server->id,
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->not->toContain('echo "Restart queue supervisor"');
+    expect($content)->not->toContain('supervisorctl');
+});
+
+test('redeploy script restarts supervisor when queue enabled', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create([
+        'team_id' => $team->id,
+        'status' => ServerStatus::Provisioned,
+    ]);
+
+    $site = Site::factory()->queueEnabled()->create([
+        'server_id' => $server->id,
+        'domain' => 'myapp.com',
+    ]);
+
+    $url = URL::signedRoute('sites.redeploy-script', ['site' => $site]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('echo "Restart queue supervisor"');
+    expect($content)->toContain('sudo supervisorctl restart myapp.com-worker:*');
+});

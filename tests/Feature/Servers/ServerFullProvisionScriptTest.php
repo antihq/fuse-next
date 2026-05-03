@@ -698,6 +698,9 @@ test('full provision script configures sudoers rules for fuse user', function ()
     expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/supervisorctl');
     expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/tee /etc/supervisor/conf.d/*');
     expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/rm /etc/supervisor/conf.d/*');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/chmod -R 775 /home/fuse/*/storage /home/fuse/*/bootstrap/cache /home/fuse/*/database');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/chown -R fuse\:fuse /home/fuse/*/storage /home/fuse/*/bootstrap/cache /home/fuse/*/database');
+    expect($content)->toContain('/etc/sudoers.d/fuse-deploy');
 });
 
 test('full provision script enables and starts supervisor', function () {
@@ -719,4 +722,27 @@ test('full provision script enables and starts supervisor', function () {
     expect($content)->toContain('echo "Configure Supervisor"');
     expect($content)->toContain('systemctl enable supervisor');
     expect($content)->toContain('systemctl start supervisor');
+});
+
+test('full provision script scopes deploy sudoers rules to fuse home directories', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->switchTeam($team);
+
+    $server = Server::factory()->create(['team_id' => $team->id]);
+
+    $url = URL::signedRoute('servers.full-provision-script', ['server' => $server]);
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/chmod -R 775 /home/fuse/*/storage');
+    expect($content)->toContain('/home/fuse/*/bootstrap/cache');
+    expect($content)->toContain('/home/fuse/*/database');
+    expect($content)->toContain('fuse ALL=(root) NOPASSWD: /usr/bin/chown -R fuse\:fuse /home/fuse/*/storage');
+    expect($content)->toContain('/etc/sudoers.d/fuse-deploy');
 });

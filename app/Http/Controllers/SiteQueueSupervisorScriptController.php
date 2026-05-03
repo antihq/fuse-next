@@ -45,9 +45,10 @@ stdout_logfile=/home/fuse/{$domain}/storage/logs/worker.log
 stopwaitsecs=3600
 EOF
 
-echo "Ensure log directory exists"
+echo "Ensure log directory and worker log exist"
 mkdir -p "\$DEPLOY_DIR/storage/logs"
-chown -R fuse:fuse "\$DEPLOY_DIR/storage/logs"
+touch "\$DEPLOY_DIR/storage/logs/worker.log"
+chmod -R 775 "\$DEPLOY_DIR/storage/logs"
 
 echo "Reload supervisor"
 sudo supervisorctl reread

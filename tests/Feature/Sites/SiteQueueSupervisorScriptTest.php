@@ -163,9 +163,11 @@ test('queue supervisor setup script ensures log directory', function () {
 
     $content = $response->getContent();
 
-    expect($content)->toContain('echo "Ensure log directory exists"');
+    expect($content)->toContain('echo "Ensure log directory and worker log exist"');
     expect($content)->toContain('mkdir -p "$DEPLOY_DIR/storage/logs"');
-    expect($content)->toContain('chown -R fuse:fuse "$DEPLOY_DIR/storage/logs"');
+    expect($content)->toContain('touch "$DEPLOY_DIR/storage/logs/worker.log"');
+    expect($content)->toContain('chmod -R 775 "$DEPLOY_DIR/storage/logs"');
+    expect($content)->not->toContain('chown -R fuse:fuse "$DEPLOY_DIR/storage/logs"');
 });
 
 test('queue supervisor setup script writes config to correct path', function () {

@@ -58,8 +58,8 @@ echo "Cache Laravel configuration"
 \$PHP artisan view:cache
 
 echo "Set directory permissions"
-chmod -R 775 storage bootstrap/cache database
-chown -R fuse:fuse storage bootstrap/cache database
+sudo chmod -R 775 storage bootstrap/cache database
+sudo chown -R fuse:fuse storage bootstrap/cache database
 
 echo "Reload PHP-FPM"
 touch /tmp/fpmlock 2>/dev/null || true

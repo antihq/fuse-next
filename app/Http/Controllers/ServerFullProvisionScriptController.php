@@ -319,6 +319,8 @@ echo "fuse ALL=(root) NOPASSWD: /usr/sbin/service php*-fpm reload" >> /etc/sudoe
 echo "fuse ALL=(root) NOPASSWD: /usr/bin/supervisorctl" >> /etc/sudoers.d/supervisor
 echo "fuse ALL=(root) NOPASSWD: /usr/bin/tee /etc/supervisor/conf.d/*" >> /etc/sudoers.d/supervisor
 echo "fuse ALL=(root) NOPASSWD: /usr/bin/rm /etc/supervisor/conf.d/*" >> /etc/sudoers.d/supervisor
+echo "fuse ALL=(root) NOPASSWD: /usr/bin/chmod -R 775 /home/fuse/*/storage /home/fuse/*/bootstrap/cache /home/fuse/*/database" >> /etc/sudoers.d/fuse-deploy
+echo "fuse ALL=(root) NOPASSWD: /usr/bin/chown -R fuse\:fuse /home/fuse/*/storage /home/fuse/*/bootstrap/cache /home/fuse/*/database" >> /etc/sudoers.d/fuse-deploy
 
 echo "Configure Supervisor"
 systemctl enable supervisor

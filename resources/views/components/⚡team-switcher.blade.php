@@ -101,8 +101,6 @@ new class extends Component {
 }; ?>
 
 <div>
-    <flux:menu.heading>{{ __('Teams') }}</flux:menu.heading>
-
     @foreach ($this->teams() as $team)
         <flux:menu.item
             wire:click="switchTeam('{{ $team->slug }}')"
@@ -118,10 +116,8 @@ new class extends Component {
         </flux:menu.item>
     @endforeach
 
-    <flux:menu.separator />
-
     <flux:modal.trigger name="create-team-switcher">
-        <flux:menu.item icon="plus" class="cursor-pointer" data-test="team-switcher-new-team">
+        <flux:menu.item class="cursor-pointer" data-test="team-switcher-new-team">
             {{ __('New team') }}
         </flux:menu.item>
     </flux:modal.trigger>

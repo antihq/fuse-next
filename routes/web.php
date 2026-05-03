@@ -10,11 +10,8 @@ use App\Http\Controllers\SiteQueueSupervisorScriptController;
 use App\Http\Controllers\SiteRedeployScriptController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::view('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::livewire('/', 'pages::home')->name('home');
 
 Route::middleware('signed')->get('servers/{server}/full-provision-script', ServerFullProvisionScriptController::class)
     ->name('servers.full-provision-script');

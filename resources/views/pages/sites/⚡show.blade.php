@@ -242,7 +242,7 @@ new #[Title('Site Details')] class extends Component
 
             <div class="mt-1 text-sm space-y-3">
                 <p class="max-w-prose">
-                    The deploy script copies <code>.env.example</code> and sets <code>APP_ENV=production</code> and <code>APP_DEBUG=false</code>. Edit your <code>.env</code> file to add database credentials, mail settings, API keys, and other configuration.
+                    The deploy script copies <x-code>.env.example</x-code> and sets <x-code>APP_ENV=production</x-code> and <x-code>APP_DEBUG=false</x-code>. Edit your <x-code>.env</x-code> file to add database credentials, mail settings, API keys, and other configuration.
                 </p>
 
                 <div class="space-y-3">
@@ -294,7 +294,7 @@ new #[Title('Site Details')] class extends Component
 
             <div class="mt-1 text-sm space-y-3">
                 <p class="max-w-prose">
-                    Enable a Supervisor-managed queue worker for this site. The worker will run <code>php artisan queue:work</code> and auto-restart on failure.
+                    Enable a Supervisor-managed queue worker for this site. The worker will run <x-code>php artisan queue:work</x-code> and auto-restart on failure.
                 </p>
 
                 <flux:switch wire:model.live="queueEnabled" wire:change="toggleQueueSupervisor" label="Enable queue worker" size="sm" />

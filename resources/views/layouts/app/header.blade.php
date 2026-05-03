@@ -12,20 +12,28 @@
 
                 <flux:spacer />
 
-                <flux:navbar class="w-full justify-between grid grid-cols-3">
-                    <div class="flex">
-                        <flux:navbar.item :href="route('dashboard')" :current="request()->routeIs('dashboard')" class="data-current:after:rounded-full" wire:navigate>
-                            {{ __('Dashboard') }}
-                        </flux:navbar.item>
-                    </div>
-                    <div class="flex justify-center">
-                        <flux:navbar.item :href="route('servers.index')" :current="request()->routeIs('servers.*')" class="data-current:after:rounded-full" wire:navigate>
-                            {{ __('Servers') }}
-                        </flux:navbar.item>
-                    </div>
-                    <div class="flex justify-end">
-                        <x-desktop-user-menu class="data-current:after:rounded-full" :showTeam="true" />
-                    </div>
+                <flux:navbar class="w-full justify-between {{ auth()->check() ? 'grid grid-cols-3' : '' }}">
+                    @auth
+                        <div class="flex">
+                            <flux:navbar.item :href="route('dashboard')" :current="request()->routeIs('dashboard')" class="data-current:after:rounded-full" wire:navigate>
+                                {{ __('Dashboard') }}
+                            </flux:navbar.item>
+                        </div>
+                        <div class="flex justify-center">
+                            <flux:navbar.item :href="route('servers.index')" :current="request()->routeIs('servers.*')" class="data-current:after:rounded-full" wire:navigate>
+                                {{ __('Servers') }}
+                            </flux:navbar.item>
+                        </div>
+                        <div class="flex justify-end">
+                            <x-desktop-user-menu class="data-current:after:rounded-full" :showTeam="true" />
+                        </div>
+                    @else
+                        <div class="flex justify-end w-full gap-1">
+                            <flux:navbar.item :href="route('login')" wire:navigate>
+                                {{ __('Login') }}
+                            </flux:navbar.item>
+                        </div>
+                    @endauth
                 </flux:navbar>
             </div>
         </flux:header>

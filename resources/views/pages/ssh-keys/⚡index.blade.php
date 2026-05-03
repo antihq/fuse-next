@@ -30,17 +30,16 @@ new #[Title('SSH Keys')] class extends Component
     }
 }; ?>
 
-<section class="w-full">
-    <x-pages::settings.layout :heading="''">
-        @if($this->sshKeys->isNotEmpty())
-            <div class="space-y-6">
-                <div class="flex items-center">
-                    <flux:heading class="whitespace-nowrap">SSH Keys</flux:heading>
-                    <flux:separator class="ml-3" />
-                    <flux:button size="sm" :href="route('ssh-keys.create')" icon:trailing="plus" class="rounded-full!" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
-                </div>
-                <div class="space-y-4">
-                    <p class="text-sm max-w-prose">{{ __('These keys are added to every server you provision, giving you passwordless SSH access.') }}</p>
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('SSH Keys') }}</flux:heading>
+        <flux:separator />
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+            @if($this->sshKeys->isNotEmpty())
+                <div class="space-y-8">
                     <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
                         <flux:table class="whitespace-normal!">
                             <flux:table.columns>
@@ -69,32 +68,39 @@ new #[Title('SSH Keys')] class extends Component
                             </flux:table.rows>
                         </flux:table>
                     </div>
+
+                    <flux:button size="sm" :href="route('ssh-keys.create')" icon:trailing="plus" class="rounded-full!" wire:navigate>{{ __('Add SSH Key') }}</flux:button>
                 </div>
-            </div>
-        @else
-            <div class="space-y-6">
-                <div>
-                    <flux:heading>{{ __('Add your first SSH key') }}</flux:heading>
-                    <p class="text-sm mt-2">
-                        {{ __('Your public key is added to every server you set up, giving you secure shell access without a password.') }}
-                    </p>
+            @else
+                <div class="space-y-8">
+                    <div>
+                        <flux:heading>{{ __('Add your first SSH key') }}</flux:heading>
+                        <p class="text-sm/6 mt-2">
+                            {{ __('Your public key is added to every server you set up, giving you secure shell access without a password.') }}
+                        </p>
+                    </div>
+                    <ul class="text-sm/6 space-y-2 list-disc list-inside">
+                        <li>{{ __('Ed25519 and RSA key types supported') }}</li>
+                        <li>{{ __('Automatically authorized during server setup') }}</li>
+                        <li>{{ __('Each team member can add their own keys') }}</li>
+                    </ul>
+                    <flux:button
+                        :href="route('ssh-keys.create')"
+                        icon:trailing="arrow-right"
+                        variant="primary"
+                        color="blue"
+                        size="sm"
+                        wire:navigate
+                    >
+                        {{ __('Add SSH Key') }}
+                    </flux:button>
                 </div>
-                <ul class="text-sm space-y-2 list-disc list-inside">
-                    <li>{{ __('Ed25519 and RSA key types supported') }}</li>
-                    <li>{{ __('Automatically authorized during server setup') }}</li>
-                    <li>{{ __('Each team member can add their own keys') }}</li>
-                </ul>
-                <flux:button
-                    :href="route('ssh-keys.create')"
-                    icon:trailing="arrow-right"
-                    variant="primary"
-                    color="blue"
-                    size="sm"
-                    wire:navigate
-                >
-                    {{ __('Add SSH Key') }}
-                </flux:button>
-            </div>
-        @endif
-    </x-pages::settings.layout>
-</section>
+            @endif
+        </div>
+
+        <div class="text-sm/6 space-y-3">
+            <p>These keys are added to every server you provision, giving you passwordless SSH access as the <x-code>fuse</x-code> user.</p>
+            <p>Each team member can add their own keys. Keys are authorized during server provisioning.</p>
+        </div>
+    </div>
+</div>

@@ -26,16 +26,14 @@ new #[Title('Add SSH Key')] class extends Component
     }
 }; ?>
 
-<section class="w-full">
-    <x-pages::settings.layout :heading="''">
-        <div class="space-y-8">
-            <div>
-                <flux:heading>{{ __('Add a new SSH key') }}</flux:heading>
-                <p class="mt-1 text-sm/6">
-                    {{ __('Paste your public key below. It will be added to every server you set up.') }}
-                </p>
-            </div>
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('Add SSH Key') }}</flux:heading>
+        <flux:separator />
+    </div>
 
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
             <form wire:submit="create" class="space-y-8">
                 <flux:input size="sm" wire:model="name" :label="__('Name')" :placeholder="__('MacBook Pro')" required autofocus />
 
@@ -54,5 +52,10 @@ new #[Title('Add SSH Key')] class extends Component
                 </flux:button>
             </form>
         </div>
-    </x-pages::settings.layout>
-</section>
+
+        <div class="text-sm/6 space-y-3">
+            <p>Paste your public key below. It will be added to every server you set up.</p>
+            <p>Supported key types: Ed25519 and RSA. Generate a new key with <x-code>ssh-keygen -t ed25519</x-code>.</p>
+        </div>
+    </div>
+</div>

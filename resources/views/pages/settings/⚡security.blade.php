@@ -24,9 +24,6 @@ new #[Title('Security settings')] class extends Component {
 
     public bool $requiresConfirmation;
 
-    /**
-     * Mount the component.
-     */
     public function mount(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         $this->canManageTwoFactor = Features::canManageTwoFactorAuthentication();
@@ -41,9 +38,6 @@ new #[Title('Security settings')] class extends Component {
         }
     }
 
-    /**
-     * Update the password for the currently authenticated user.
-     */
     public function updatePassword(): void
     {
         try {
@@ -66,18 +60,12 @@ new #[Title('Security settings')] class extends Component {
         Flux::toast(variant: 'success', text: __('Password updated.'));
     }
 
-    /**
-     * Handle the two-factor authentication enabled event.
-     */
     #[On('two-factor-enabled')]
     public function onTwoFactorEnabled(): void
     {
         $this->twoFactorEnabled = true;
     }
 
-    /**
-     * Disable two-factor authentication for the user.
-     */
     public function disable(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         $disableTwoFactorAuthentication(auth()->user());
@@ -86,54 +74,65 @@ new #[Title('Security settings')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    @include('partials.settings-heading')
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('Security') }}</flux:heading>
+        <flux:separator />
+    </div>
 
-    <flux:heading class="sr-only">{{ __('Security settings') }}</flux:heading>
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+            <form method="POST" wire:submit="updatePassword" class="space-y-8">
+                <flux:input
+                    size="sm"
+                    wire:model="current_password"
+                    :label="__('Current password')"
+                    type="password"
+                    required
+                    autocomplete="current-password"
+                    viewable
+                />
+                <flux:input
+                    size="sm"
+                    wire:model="password"
+                    :label="__('New password')"
+                    type="password"
+                    required
+                    autocomplete="new-password"
+                    viewable
+                />
+                <flux:input
+                    size="sm"
+                    wire:model="password_confirmation"
+                    :label="__('Confirm password')"
+                    type="password"
+                    required
+                    autocomplete="new-password"
+                    viewable
+                />
 
-    <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
-        <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
-            <flux:input
-                size="sm"
-                wire:model="current_password"
-                :label="__('Current password')"
-                type="password"
-                required
-                autocomplete="current-password"
-                viewable
-            />
-            <flux:input
-                size="sm"
-                wire:model="password"
-                :label="__('New password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                viewable
-            />
-            <flux:input
-                size="sm"
-                wire:model="password_confirmation"
-                :label="__('Confirm password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                viewable
-            />
+                <div class="flex items-center gap-4">
+                    <flux:button size="sm" variant="primary" type="submit" data-test="update-password-button">
+                        {{ __('Save') }}
+                    </flux:button>
+                </div>
+            </form>
+        </div>
 
-            <div class="flex items-center gap-4">
-                <flux:button size="sm" variant="primary" type="submit" data-test="update-password-button">
-                    {{ __('Save') }}
-                </flux:button>
+        <div class="text-sm/6 space-y-3">
+            <p>Use a long, random password to stay secure. After saving, you'll need to log in again with the new password.</p>
+        </div>
+    </div>
+
+    @if ($canManageTwoFactor)
+        <div class="mt-8">
+            <div class="flex items-center gap-3">
+                <flux:heading class="whitespace-nowrap">{{ __('Two-factor authentication') }}</flux:heading>
+                <flux:separator />
             </div>
-        </form>
 
-        @if ($canManageTwoFactor)
-            <section class="mt-12">
-                <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
-                <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
-
-                <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-6 text-sm" wire:cloak>
                     @if ($twoFactorEnabled)
                         <div class="space-y-4">
                             <flux:text>
@@ -172,7 +171,12 @@ new #[Title('Security settings')] class extends Component {
                         </div>
                     @endif
                 </div>
-            </section>
-        @endif
-    </x-pages::settings.layout>
-</section>
+
+                <div class="text-sm/6 space-y-3">
+                    <p>Two-factor authentication adds a second layer of security. You'll need an authenticator app on your phone.</p>
+                    <p>If you lose your device, recovery codes let you regain access. Store them in a secure password manager.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>

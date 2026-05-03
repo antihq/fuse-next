@@ -14,18 +14,12 @@ new #[Title('Profile settings')] class extends Component {
     public string $name = '';
     public string $email = '';
 
-    /**
-     * Mount the component.
-     */
     public function mount(): void
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
     }
 
-    /**
-     * Update the profile information for the currently authenticated user.
-     */
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
@@ -43,9 +37,6 @@ new #[Title('Profile settings')] class extends Component {
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
 
-    /**
-     * Send an email verification notification to the current user.
-     */
     public function resendVerificationNotification(): void
     {
         $user = Auth::user();
@@ -75,41 +66,47 @@ new #[Title('Profile settings')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    @include('partials.settings-heading')
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('Profile') }}</flux:heading>
+        <flux:separator />
+    </div>
 
-    <flux:heading class="sr-only">{{ __('Profile settings') }}</flux:heading>
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+            <form wire:submit="updateProfileInformation" class="space-y-8">
+                <flux:input size="sm" wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
-    <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input size="sm" wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+                <div>
+                    <flux:input size="sm" wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
 
-            <div>
-                <flux:input size="sm" wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                    @if ($this->hasUnverifiedEmail)
+                        <div>
+                            <flux:text class="mt-4">
+                                {{ __('Your email address is unverified.') }}
 
-                @if ($this->hasUnverifiedEmail)
-                    <div>
-                        <flux:text class="mt-4">
-                            {{ __('Your email address is unverified.') }}
+                                <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
+                                    {{ __('Click here to re-send the verification email.') }}
+                                </flux:link>
+                            </flux:text>
+                        </div>
+                    @endif
+                </div>
 
-                            <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                                {{ __('Click here to re-send the verification email.') }}
-                            </flux:link>
-                        </flux:text>
+                <div class="flex items-center gap-4">
+                    <flux:button size="sm" variant="primary" type="submit" data-test="update-profile-button">
+                        {{ __('Save') }}
+                    </flux:button>
+                </div>
+            </form>
 
-                    </div>
-                @endif
-            </div>
+            @if ($this->showDeleteUser)
+                <livewire:pages::settings.delete-user-form />
+            @endif
+        </div>
 
-            <div class="flex items-center gap-4">
-                <flux:button size="sm" variant="primary" type="submit" data-test="update-profile-button">
-                    {{ __('Save') }}
-                </flux:button>
-            </div>
-        </form>
-
-        @if ($this->showDeleteUser)
-            <livewire:pages::settings.delete-user-form />
-        @endif
-    </x-pages::settings.layout>
-</section>
+        <div class="text-sm/6 space-y-3">
+            <p>Update your name and email address. If you change your email, you'll need to verify the new one.</p>
+        </div>
+    </div>
+</div>

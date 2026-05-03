@@ -134,24 +134,23 @@ new class extends Component
     }
 }; ?>
 
-<section class="w-full">
-    @include('partials.settings-heading')
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ $teamData['name'] ?? '' }}</flux:heading>
+        <flux:separator />
+    </div>
 
-    <flux:heading class="sr-only">{{ __('Teams') }}</flux:heading>
-
-    <x-pages::settings.layout :heading="__('Teams')" :subheading="__('Manage your team settings')">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="space-y-10">
-            <div class="space-y-6">
+            <div class="space-y-8">
                 @if ($this->permissions->canUpdateTeam)
-                    <div class="space-y-4">
-                        <form wire:submit="updateTeam" class="space-y-6">
-                            <flux:input size="sm" wire:model="teamName" :label="__('Team name')" required data-test="team-name-input" />
+                    <form wire:submit="updateTeam" class="space-y-8">
+                        <flux:input size="sm" wire:model="teamName" :label="__('Team name')" required data-test="team-name-input" />
 
-                            <flux:button size="sm" variant="primary" type="submit" data-test="team-save-button">
-                                {{ __('Save') }}
-                            </flux:button>
-                        </form>
-                    </div>
+                        <flux:button size="sm" variant="primary" type="submit" data-test="team-save-button">
+                            {{ __('Save') }}
+                        </flux:button>
+                    </form>
                 @else
                     <div>
                         <flux:heading>{{ $teamData['name'] }}</flux:heading>
@@ -308,7 +307,12 @@ new class extends Component
                 </div>
             @endif
         </div>
-    </x-pages::settings.layout>
+
+        <div class="text-sm/6 space-y-3">
+            <p>Manage your team settings, members, and invitations.</p>
+            <p>Teams have owner, admin, and member roles. Owners and admins can invite members, assign roles, and manage team resources.</p>
+        </div>
+    </div>
 
     @if ($this->permissions->canCreateInvitation)
         <livewire:pages::teams.invite-member-modal :team="$teamModel" />
@@ -317,4 +321,4 @@ new class extends Component
     @if ($this->permissions->canDeleteTeam && ! $teamData['is_personal'])
         <livewire:pages::teams.delete-team-modal :team="$teamModel" />
     @endif
-</section>
+</div>

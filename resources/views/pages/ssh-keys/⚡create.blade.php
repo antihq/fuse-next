@@ -58,4 +58,11 @@ new #[Title('Add SSH Key')] class extends Component
             <p>Supported key types: Ed25519 and RSA. Generate a new key with <x-code>ssh-keygen -t ed25519</x-code>.</p>
         </div>
     </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('ssh-keys.index')" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to SSH Keys') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

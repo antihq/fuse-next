@@ -354,4 +354,11 @@ new #[Title('Site Details')] class extends Component
             <p class="text-sm/6 mt-1 max-w-prose">Removes this site from Fuse. The files on the server are not touched — run the remove command to clean those up.</p>
         </div>
     @endif
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('sites.index', ['current_team' => $this->team->slug, $this->server])" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Sites') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

@@ -174,9 +174,6 @@ new #[Title('Two-factor authentication')] class extends Component {
                         @endif
                     </div>
 
-                    <flux:button size="sm" :href="route('security.edit')" wire:navigate>
-                        {{ __('Back to security') }}
-                    </flux:button>
                 </div>
             @elseif ($showVerificationStep)
                 <div class="space-y-8">
@@ -291,7 +288,6 @@ new #[Title('Two-factor authentication')] class extends Component {
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4">
                         <flux:button
                             size="sm"
                             variant="primary"
@@ -300,8 +296,6 @@ new #[Title('Two-factor authentication')] class extends Component {
                         >
                             {{ __('Continue') }}
                         </flux:button>
-                        <flux:link size="sm" :href="route('security.edit')" wire:navigate>{{ __('Cancel') }}</flux:link>
-                    </div>
                 </div>
             @endif
         </div>
@@ -311,5 +305,12 @@ new #[Title('Two-factor authentication')] class extends Component {
             <p>Scan the QR code with your authenticator app, then enter the 6-digit code to confirm setup.</p>
             <p>If you lose your device, recovery codes let you regain access. Store them in a secure password manager.</p>
         </div>
+    </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('security.edit')" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Security') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
     </div>
 </div>

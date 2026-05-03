@@ -71,10 +71,7 @@ new #[Title('Invite team member')] class extends Component {
                     @endforeach
                 </flux:select>
 
-                <div class="flex items-center gap-4">
-                    <flux:button size="sm" variant="primary" type="submit" data-test="invite-submit">{{ __('Send invitation') }}</flux:button>
-                    <flux:link size="sm" :href="route('teams.edit', $team->slug)" wire:navigate>{{ __('Cancel') }}</flux:link>
-                </div>
+                <flux:button size="sm" variant="primary" type="submit" data-test="invite-submit">{{ __('Send invitation') }}</flux:button>
             </form>
         </div>
 
@@ -82,5 +79,12 @@ new #[Title('Invite team member')] class extends Component {
             <p>Send an invitation to join this team. The invitee will receive an email with a link to accept.</p>
             <p>Invitations expire after 3 days.</p>
         </div>
+    </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('teams.edit', $team->slug)" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to :name', ['name' => $team->name]) }}
+        </flux:button>
+        <flux:separator class="ml-3" />
     </div>
 </div>

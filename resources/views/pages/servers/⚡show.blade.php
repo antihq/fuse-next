@@ -341,4 +341,11 @@ new #[Title('Server Details')] class extends Component
         </div>
         <p class="text-sm/6 mt-1 max-w-prose">{{ __('Removes this server and all its sites from Fuse. The VPS is not touched — shut it down manually from your provider.') }}</p>
     </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Servers') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

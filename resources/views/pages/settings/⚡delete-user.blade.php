@@ -36,17 +36,21 @@ new #[Title('Delete account')] class extends Component {
             <form wire:submit="deleteUser" class="space-y-8">
                 <flux:input size="sm" wire:model="password" :label="__('Password')" type="password" required viewable data-test="delete-account-password" />
 
-                <div class="flex items-center gap-4">
-                    <flux:button size="sm" variant="danger" type="submit" data-test="confirm-delete-user-button">
-                        {{ __('Delete account') }}
-                    </flux:button>
-                    <flux:link size="sm" :href="route('profile.edit')" wire:navigate>{{ __('Cancel') }}</flux:link>
-                </div>
+                <flux:button size="sm" variant="danger" type="submit" data-test="confirm-delete-user-button">
+                    {{ __('Delete account') }}
+                </flux:button>
             </form>
         </div>
 
         <div class="text-sm/6 space-y-3">
             <p>This action cannot be undone. Your profile, settings, and all associated data will be permanently removed.</p>
         </div>
+    </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('profile.edit')" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Profile') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
     </div>
 </div>

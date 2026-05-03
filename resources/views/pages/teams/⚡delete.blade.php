@@ -82,12 +82,9 @@ new class extends Component
             <form wire:submit="deleteTeam" class="space-y-8">
                 <flux:input size="sm" wire:model="deleteName" :label="$this->deleteConfirmLabel" required data-test="delete-team-name" />
 
-                <div class="flex items-center gap-4">
-                    <flux:button size="sm" variant="danger" type="submit" data-test="delete-team-confirm">
-                        {{ __('Delete team') }}
-                    </flux:button>
-                    <flux:link size="sm" :href="route('teams.edit', $team->slug)" wire:navigate>{{ __('Cancel') }}</flux:link>
-                </div>
+                <flux:button size="sm" variant="danger" type="submit" data-test="delete-team-confirm">
+                    {{ __('Delete team') }}
+                </flux:button>
             </form>
         </div>
 
@@ -95,5 +92,12 @@ new class extends Component
             <p>All servers and sites belonging to this team will remain on their servers but will no longer be manageable through Fuse.</p>
             <p>All team members will be removed. Members who have this team as their current team will be switched to their personal team.</p>
         </div>
+    </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('teams.edit', $team->slug)" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to :name', ['name' => $team->name]) }}
+        </flux:button>
+        <flux:separator class="ml-3" />
     </div>
 </div>

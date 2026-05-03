@@ -127,4 +127,11 @@ new #[Title('Add Site')] class extends Component
             </p>
         </div>
     </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('servers.show', [$this->team->slug, $this->server])" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Server') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

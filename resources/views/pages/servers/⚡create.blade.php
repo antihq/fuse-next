@@ -78,4 +78,11 @@ new #[Title('Connect Server')] class extends Component
             </p>
         </div>
     </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('servers.index', ['current_team' => $this->team->slug])" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Servers') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

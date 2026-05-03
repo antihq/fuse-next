@@ -35,17 +35,21 @@ new #[Title('Create team')] class extends Component {
             <form wire:submit="createTeam" class="space-y-8">
                 <flux:input size="sm" wire:model="name" :label="__('Team name')" type="text" required autofocus data-test="create-team-name" />
 
-                <div class="flex items-center gap-4">
-                    <flux:button size="sm" variant="primary" type="submit" data-test="create-team-submit">
-                        {{ __('Create team') }}
-                    </flux:button>
-                    <flux:link size="sm" :href="route('teams.index')" wire:navigate>{{ __('Cancel') }}</flux:link>
-                </div>
+                <flux:button size="sm" variant="primary" color="emerald" icon:trailing="arrow-right" type="submit" data-test="create-team-submit">
+                    {{ __('Create team') }}
+                </flux:button>
             </form>
         </div>
 
         <div class="text-sm/6 space-y-3">
             <p>Give your team a name to get started. After creating the team, you can invite members and manage roles.</p>
         </div>
+    </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('teams.index')" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Teams') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
     </div>
 </div>

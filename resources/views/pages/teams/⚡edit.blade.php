@@ -304,4 +304,11 @@ new class extends Component
             <p>Teams have owner, admin, and member roles. Owners and admins can invite members, assign roles, and manage team resources.</p>
         </div>
     </div>
+
+    <div class="flex items-center mt-8">
+        <flux:button size="sm" :href="route('teams.index')" wire:navigate icon="arrow-left" class="rounded-full!">
+            {{ __('Return to Teams') }}
+        </flux:button>
+        <flux:separator class="ml-3" />
+    </div>
 </div>

@@ -23,7 +23,7 @@ new #[Title('Fuse')] class extends Component
             <flux:heading class="whitespace-nowrap">Deploy Laravel to production</flux:heading>
             <flux:separator />
         </div>
-        <div class="mt-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 <p class="text-sm/6 max-w-2xl">
                     Fuse provisions VPS servers and deploys Laravel applications. You run one-liner commands on your own server over SSH. No agent, no daemon, no API connection from Fuse to your infrastructure. You copy a <x-code>wget</x-code> command, paste it into your terminal, and the server is ready.
@@ -63,7 +63,7 @@ new #[Title('Fuse')] class extends Component
         <div class="mt-8 space-y-8">
             <div class="space-y-3">
                 <p class="text-sm font-medium">1. Register server</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <p class="text-sm/6">
                         Provide the server's public IP address. Fuse generates a signed provisioning script URL. SSH into your server as root and run the command.
                     </p>
@@ -78,7 +78,7 @@ new #[Title('Fuse')] class extends Component
 
             <div class="space-y-3">
                 <p class="text-sm font-medium">2. Add site</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <p class="text-sm/6">
                         Point your domain's DNS A record to the server IP. In Fuse, provide the domain, Git repository URL, and PHP version.
                     </p>
@@ -93,7 +93,7 @@ new #[Title('Fuse')] class extends Component
 
             <div class="space-y-3">
                 <p class="text-sm font-medium">3. Ship</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <p class="text-sm/6">
                         Your site is live. Redeploy with a new one-liner when you push changes. Enable queue workers. Edit environment variables directly on the server. Fuse tracks deployment status but never connects to your server on its own &mdash; every action is initiated by you, from your terminal.
                     </p>
@@ -114,7 +114,7 @@ new #[Title('Fuse')] class extends Component
             <flux:separator />
         </div>
 
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
                 <x-description.list>
                     <x-description.term>Web server</x-description.term>
@@ -158,7 +158,7 @@ new #[Title('Fuse')] class extends Component
             <flux:separator />
         </div>
 
-        <div class="mt-4 w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
+        <div class="mt-8 w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
             <x-description.list>
                 <x-description.term>Signed URLs, not agents</x-description.term>
                 <x-description.details>Fuse generates time-limited, cryptographically signed URLs for scripts. Nothing runs on your server unless you invoke it.</x-description.details>

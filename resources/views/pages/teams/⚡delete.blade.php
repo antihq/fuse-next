@@ -6,9 +6,11 @@ use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new class extends Component {
+new class extends Component
+{
     public Team $team;
 
     public string $deleteName = '';
@@ -62,35 +64,36 @@ new class extends Component {
         $this->redirectRoute('teams.index', navigate: true);
     }
 
-    /**
-     * @return Collection<int, UserTeam>
-     */
-    public function getOtherTeamsProperty(): Collection
-    {
-        return Auth::user()->toUserTeams();
-    }
 }; ?>
 
-<flux:modal name="delete-team" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
-    <form wire:submit="deleteTeam" class="space-y-6">
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('Delete team') }}</flux:heading>
+        <flux:separator />
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-            <flux:heading size="lg">{{ __('Are you sure?') }}</flux:heading>
-            <flux:subheading>
-                {{ __('This action cannot be undone. This will permanently delete the team ":name".', ['name' => $team->name]) }}
-            </flux:subheading>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-200/10 dark:bg-red-900/20 dark:text-red-100 mb-8">
+                <p class="font-medium">{{ __('Warning') }}</p>
+                <p class="text-sm mt-1">{{ __('This action cannot be undone. This will permanently delete the team ":name" and remove all members.', ['name' => $team->name]) }}</p>
+            </div>
+
+            <form wire:submit="deleteTeam" class="space-y-8">
+                <flux:input size="sm" wire:model="deleteName" :label="$this->deleteConfirmLabel" required data-test="delete-team-name" />
+
+                <div class="flex items-center gap-4">
+                    <flux:button size="sm" variant="danger" type="submit" data-test="delete-team-confirm">
+                        {{ __('Delete team') }}
+                    </flux:button>
+                    <flux:link size="sm" :href="route('teams.edit', $team->slug)" wire:navigate>{{ __('Cancel') }}</flux:link>
+                </div>
+            </form>
         </div>
 
-        <div class="space-y-4">
-            <flux:input size="sm" wire:model="deleteName" :label="$this->deleteConfirmLabel" required data-test="delete-team-name" />
+        <div class="text-sm/6 space-y-3">
+            <p>All servers and sites belonging to this team will remain on their servers but will no longer be manageable through Fuse.</p>
+            <p>All team members will be removed. Members who have this team as their current team will be switched to their personal team.</p>
         </div>
-
-        <div class="flex justify-end space-x-2 rtl:space-x-reverse">
-            <flux:modal.close>
-                <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
-            </flux:modal.close>
-            <flux:button size="sm" variant="danger" type="submit" data-test="delete-team-confirm">
-                {{ __('Delete team') }}
-            </flux:button>
-        </div>
-    </form>
-</flux:modal>
+    </div>
+</div>

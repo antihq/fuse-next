@@ -49,9 +49,8 @@ test('team member can be removed by owner', function () {
 
     $this->actingAs($owner);
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
+    Livewire::test('pages::teams.edit', ['team' => $team])
+        ->call('removeMember', $member->id)
         ->assertHasNoErrors();
 
     expect($member->fresh()->belongsToTeam($team))->toBeFalse();
@@ -69,9 +68,8 @@ test('team member cannot be removed by non owners', function () {
 
     $this->actingAs($admin);
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
+    Livewire::test('pages::teams.edit', ['team' => $team])
+        ->call('removeMember', $member->id)
         ->assertForbidden();
 });
 
@@ -88,9 +86,8 @@ test('removed members current team is set to personal team', function () {
 
     $this->actingAs($owner);
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
+    Livewire::test('pages::teams.edit', ['team' => $team])
+        ->call('removeMember', $member->id)
         ->assertHasNoErrors();
 
     expect($member->fresh()->current_team_id)->toEqual($personalTeam->id);

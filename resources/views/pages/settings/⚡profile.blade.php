@@ -57,13 +57,6 @@ new #[Title('Profile settings')] class extends Component {
     {
         return Auth::user() instanceof MustVerifyEmail && ! Auth::user()->hasVerifiedEmail();
     }
-
-    #[Computed]
-    public function showDeleteUser(): bool
-    {
-        return ! Auth::user() instanceof MustVerifyEmail
-            || (Auth::user() instanceof MustVerifyEmail && Auth::user()->hasVerifiedEmail());
-    }
 }; ?>
 
 <div>
@@ -100,8 +93,12 @@ new #[Title('Profile settings')] class extends Component {
                 </div>
             </form>
 
-            @if ($this->showDeleteUser)
-                <livewire:pages::settings.delete-user-form />
+            @if (Auth::user() instanceof MustVerifyEmail ? Auth::user()->hasVerifiedEmail() : true)
+                <div class="mt-8">
+                    <flux:link size="sm" :href="route('profile.delete')" variant="danger" wire:navigate data-test="delete-user-button">
+                        {{ __('Delete account') }}
+                    </flux:link>
+                </div>
             @endif
         </div>
 

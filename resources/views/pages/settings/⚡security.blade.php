@@ -22,8 +22,6 @@ new #[Title('Security settings')] class extends Component {
 
     public bool $twoFactorEnabled;
 
-    public bool $requiresConfirmation;
-
     public function mount(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         $this->canManageTwoFactor = Features::canManageTwoFactorAuthentication();
@@ -34,7 +32,6 @@ new #[Title('Security settings')] class extends Component {
             }
 
             $this->twoFactorEnabled = auth()->user()->hasEnabledTwoFactorAuthentication();
-            $this->requiresConfirmation = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
         }
     }
 
@@ -71,6 +68,8 @@ new #[Title('Security settings')] class extends Component {
         $disableTwoFactorAuthentication(auth()->user());
 
         $this->twoFactorEnabled = false;
+
+        Flux::toast(variant: 'success', text: __('Two-factor authentication disabled.'));
     }
 }; ?>
 
@@ -144,12 +143,13 @@ new #[Title('Security settings')] class extends Component {
                                     size="sm"
                                     variant="danger"
                                     wire:click="disable"
+                                    wire:confirm="{{ __('Are you sure you want to disable two-factor authentication?') }}"
                                 >
                                     {{ __('Disable 2FA') }}
                                 </flux:button>
                             </div>
 
-                            <livewire:pages::settings.two-factor.recovery-codes :$requiresConfirmation />
+                            <livewire:pages::settings.two-factor.recovery-codes :requiresConfirmation="Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm')" />
                         </div>
                     @else
                         <div class="space-y-4">
@@ -157,17 +157,14 @@ new #[Title('Security settings')] class extends Component {
                                 {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
                             </flux:text>
 
-                            <flux:modal.trigger name="two-factor-setup-modal">
-                                <flux:button
-                                    size="sm"
-                                    variant="primary"
-                                    wire:click="$dispatch('start-two-factor-setup')"
-                                >
-                                    {{ __('Enable 2FA') }}
-                                </flux:button>
-                            </flux:modal.trigger>
-
-                            <livewire:pages::settings.two-factor-setup-modal :requires-confirmation="$requiresConfirmation" />
+                            <flux:button
+                                size="sm"
+                                variant="primary"
+                                :href="route('two-factor.setup')"
+                                wire:navigate
+                            >
+                                {{ __('Enable 2FA') }}
+                            </flux:button>
                         </div>
                     @endif
                 </div>

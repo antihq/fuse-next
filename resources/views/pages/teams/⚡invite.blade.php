@@ -9,9 +9,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new class extends Component {
+new #[Title('Invite team member')] class extends Component {
     public Team $team;
 
     public string $inviteEmail = '';
@@ -42,9 +43,6 @@ new class extends Component {
         Notification::route('mail', $invitation->email)
             ->notify(new TeamInvitationNotification($invitation));
 
-        $this->reset('inviteEmail', 'inviteRole');
-        $this->dispatch('close-modal', name: 'invite-member');
-
         Flux::toast(variant: 'success', text: __('Invitation sent.'));
 
         $this->redirectRoute('teams.edit', ['team' => $this->team->slug], navigate: true);
@@ -56,28 +54,33 @@ new class extends Component {
     }
 }; ?>
 
-<flux:modal name="invite-member" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
-    <form wire:submit="createInvitation" class="space-y-6">
+<div>
+    <div class="flex items-center gap-3">
+        <flux:heading class="whitespace-nowrap">{{ __('Invite team member') }}</flux:heading>
+        <flux:separator />
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-            <flux:heading size="lg">{{ __('Invite a team member') }}</flux:heading>
-            <flux:subheading>{{ __('Send an invitation to join this team.') }}</flux:subheading>
+            <form wire:submit="createInvitation" class="space-y-8">
+                <flux:input size="sm" wire:model="inviteEmail" type="email" :label="__('Email address')" required data-test="invite-email" />
+
+                <flux:select size="sm" wire:model="inviteRole" :label="__('Role')" data-test="invite-role">
+                    @foreach ($this->availableRoles as $role)
+                        <flux:select.option value="{{ $role['value'] }}">{{ $role['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <div class="flex items-center gap-4">
+                    <flux:button size="sm" variant="primary" type="submit" data-test="invite-submit">{{ __('Send invitation') }}</flux:button>
+                    <flux:link size="sm" :href="route('teams.edit', $team->slug)" wire:navigate>{{ __('Cancel') }}</flux:link>
+                </div>
+            </form>
         </div>
 
-        <div class="space-y-4">
-            <flux:input size="sm" wire:model="inviteEmail" type="email" :label="__('Email address')" required data-test="invite-email" />
-
-            <flux:select size="sm" wire:model="inviteRole" :label="__('Role')" data-test="invite-role">
-                @foreach ($this->availableRoles as $role)
-                    <flux:select.option value="{{ $role['value'] }}">{{ $role['label'] }}</flux:select.option>
-                @endforeach
-            </flux:select>
+        <div class="text-sm/6 space-y-3">
+            <p>Send an invitation to join this team. The invitee will receive an email with a link to accept.</p>
+            <p>Invitations expire after 3 days.</p>
         </div>
-
-        <div class="flex justify-end space-x-2 rtl:space-x-reverse">
-            <flux:modal.close>
-                <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
-            </flux:modal.close>
-            <flux:button size="sm" variant="primary" type="submit" data-test="invite-submit">{{ __('Send invitation') }}</flux:button>
-        </div>
-    </form>
-</flux:modal>
+    </div>
+</div>

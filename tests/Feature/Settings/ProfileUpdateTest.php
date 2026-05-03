@@ -48,7 +48,7 @@ test('user can delete their account', function () {
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.delete-user-modal')
+    $response = Livewire::test('pages::settings.delete-user')
         ->set('password', 'password')
         ->call('deleteUser');
 
@@ -65,7 +65,7 @@ test('correct password must be provided to delete account', function () {
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.delete-user-modal')
+    $response = Livewire::test('pages::settings.delete-user')
         ->set('password', 'wrong-password')
         ->call('deleteUser');
 

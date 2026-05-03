@@ -1,34 +1,12 @@
 <?php
 
-use App\Actions\Teams\CreateTeam;
-use App\Rules\TeamName;
 use App\Support\UserTeam;
-use Flux\Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Teams')] class extends Component {
-    public string $name = '';
-
-    public function createTeam(CreateTeam $createTeam): void
-    {
-        $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255', new TeamName],
-        ]);
-
-        $team = $createTeam->handle(Auth::user(), $validated['name']);
-
-        $this->dispatch('close-modal', name: 'create-team');
-
-        $this->reset('name');
-
-        Flux::toast(variant: 'success', text: __('Team created.'));
-
-        $this->redirectRoute('teams.edit', ['team' => $team->slug], navigate: true);
-    }
-
     /**
      * @return Collection<int, UserTeam>
      */
@@ -47,11 +25,9 @@ new #[Title('Teams')] class extends Component {
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
             <div class="flex items-center justify-end">
-                <flux:modal.trigger name="create-team">
-                    <flux:button size="sm" variant="primary" icon="plus" x-data="" x-on:click.prevent="$dispatch('open-modal', 'create-team')" data-test="teams-new-team-button">
-                        {{ __('New team') }}
-                    </flux:button>
-                </flux:modal.trigger>
+                <flux:button size="sm" variant="primary" icon="plus" :href="route('teams.create')" wire:navigate data-test="teams-new-team-button">
+                    {{ __('New team') }}
+                </flux:button>
             </div>
 
             <div class="mt-6 space-y-3">
@@ -95,25 +71,4 @@ new #[Title('Teams')] class extends Component {
             <p>Teams have owner, admin, and member roles. Owners can invite new members and manage team settings.</p>
         </div>
     </div>
-
-    <flux:modal name="create-team" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
-        <form wire:submit="createTeam" class="space-y-6">
-            <div>
-                <flux:heading size="lg">{{ __('Create a new team') }}</flux:heading>
-                <flux:subheading>{{ __('Give your team a name to get started.') }}</flux:subheading>
-            </div>
-
-            <flux:input size="sm" wire:model="name" :label="__('Team name')" type="text" required autofocus data-test="create-team-name" />
-
-            <div class="flex justify-end space-x-2 rtl:space-x-reverse">
-                <flux:modal.close>
-                    <flux:button size="sm" variant="filled">{{ __('Cancel') }}</flux:button>
-                </flux:modal.close>
-
-                <flux:button size="sm" variant="primary" type="submit" data-test="create-team-submit">
-                    {{ __('Create team') }}
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
 </div>

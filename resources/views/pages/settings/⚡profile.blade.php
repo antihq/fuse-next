@@ -59,13 +59,13 @@ new #[Title('Profile settings')] class extends Component {
     }
 }; ?>
 
-<div>
+<div class="space-y-8">
     <div class="flex items-center gap-3">
         <flux:heading class="whitespace-nowrap">{{ __('Profile') }}</flux:heading>
         <flux:separator />
     </div>
 
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
             <form wire:submit="updateProfileInformation" class="space-y-8">
                 <flux:input size="sm" wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
@@ -86,24 +86,33 @@ new #[Title('Profile settings')] class extends Component {
                     @endif
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <flux:button size="sm" variant="primary" type="submit" data-test="update-profile-button">
-                        {{ __('Save') }}
-                    </flux:button>
-                </div>
+                <flux:button size="sm" variant="primary" type="submit" data-test="update-profile-button">
+                    {{ __('Save') }}
+                </flux:button>
             </form>
-
-            @if (Auth::user() instanceof MustVerifyEmail ? Auth::user()->hasVerifiedEmail() : true)
-                <div class="mt-8">
-                    <flux:link size="sm" :href="route('profile.delete')" variant="danger" wire:navigate data-test="delete-user-button">
-                        {{ __('Delete account') }}
-                    </flux:link>
-                </div>
-            @endif
         </div>
 
         <div class="text-sm/6 space-y-3">
             <p>Update your name and email address. If you change your email, you'll need to verify the new one.</p>
         </div>
+    </div>
+
+    <div>
+        <div class="flex items-center">
+            <flux:heading class="text-nowrap">{{ __('Danger Zone') }}</flux:heading>
+            <flux:separator class="ml-3" />
+            <flux:button
+                size="sm"
+                :href="route('profile.delete')"
+                variant="danger"
+                icon:trailing="arrow-right"
+                class="rounded-full!"
+                wire:navigate
+                data-test="delete-user-button"
+            >
+                {{ __('Delete account') }}
+            </flux:button>
+        </div>
+        <p class="text-sm/6 mt-1 max-w-prose">{{ __('Permanently delete your account and all associated data.') }}</p>
     </div>
 </div>

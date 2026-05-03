@@ -9,9 +9,11 @@
             <flux:menu.separator />
         @endif
 
-        <flux:menu.item :href="route('profile.edit')" wire:navigate>
-            {{ __('Settings') }}
-        </flux:menu.item>
+        <flux:menu.item :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:menu.item>
+        <flux:menu.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:menu.item>
+        <flux:menu.item :href="route('ssh-keys.index')" wire:navigate>{{ __('SSH Keys') }}</flux:menu.item>
+        <flux:menu.item :href="route('teams.index')" wire:navigate>{{ __('Teams') }}</flux:menu.item>
+        <flux:menu.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:menu.item>
 
         <flux:menu.separator />
 

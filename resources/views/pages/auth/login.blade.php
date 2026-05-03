@@ -1,61 +1,83 @@
-<x-layouts::auth :title="__('Log in')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+<x-layouts::app :title="__('Log in')">
+    <div>
+        <div class="flex items-center gap-3">
+            <flux:heading class="whitespace-nowrap">{{ __('Log in') }}</flux:heading>
+            <flux:separator />
+        </div>
 
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <x-auth-session-status :status="session('status')" />
 
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
-            @csrf
+                <form method="POST" action="{{ route('login.store') }}" class="space-y-8">
+                    @csrf
 
-            <!-- Email Address -->
-            <flux:input
-                size="sm"
-                name="email"
-                :label="__('Email address')"
-                :value="old('email')"
-                type="email"
-                required
-                autofocus
-                autocomplete="email"
-                placeholder="email@example.com"
-            />
+                    <flux:input
+                        size="sm"
+                        name="email"
+                        :label="__('Email address')"
+                        :value="old('email')"
+                        type="email"
+                        required
+                        autofocus
+                        autocomplete="email"
+                        placeholder="email@example.com"
+                    />
 
-            <!-- Password -->
-            <div class="relative">
-                <flux:input
-                    size="sm"
-                    name="password"
-                    :label="__('Password')"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                    :placeholder="__('Password')"
-                    viewable
-                />
+                    <div class="relative">
+                        <flux:input
+                            size="sm"
+                            name="password"
+                            :label="__('Password')"
+                            type="password"
+                            required
+                            autocomplete="current-password"
+                            :placeholder="__('Password')"
+                            viewable
+                        />
 
-                @if (Route::has('password.request'))
-                    <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
-                        {{ __('Forgot your password?') }}
-                    </flux:link>
+                        @if (Route::has('password.request'))
+                            <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
+                                {{ __('Forgot your password?') }}
+                            </flux:link>
+                        @endif
+                    </div>
+
+                    <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+
+                    <div class="flex items-center justify-end">
+                        <flux:button size="sm" variant="primary" type="submit" data-test="login-button">
+                            {{ __('Log in') }}
+                        </flux:button>
+                    </div>
+                </form>
+
+                @if (Route::has('register'))
+                    <div class="mt-4 space-x-1 rtl:space-x-reverse text-sm/6 text-zinc-600 dark:text-zinc-400">
+                        <span>{{ __('Don\'t have an account?') }}</span>
+                        <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+                    </div>
                 @endif
             </div>
 
-            <!-- Remember Me -->
-            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+            <div class="text-sm/6 space-y-3">
+                <p>Fuse provisions VPS servers and deploys Laravel applications. No agent, no daemon — you run one-liner commands on your own server over SSH.</p>
+                <div class="w-full rounded-lg ring-1 ring-zinc-800/15 shadow-xs dark:ring-white/20 px-3">
+                    <x-description.list>
+                        <x-description.term>Requirement</x-description.term>
+                        <x-description.details>Fresh Ubuntu 24.04 VPS</x-description.details>
 
-            <div class="flex items-center justify-end">
-                <flux:button size="sm" variant="primary" type="submit" class="w-full" data-test="login-button">
-                    {{ __('Log in') }}
-                </flux:button>
-            </div>
-        </form>
+                        <x-description.term>Access</x-description.term>
+                        <x-description.details>Root SSH</x-description.details>
 
-        @if (Route::has('register'))
-            <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
-                <span>{{ __('Don\'t have an account?') }}</span>
-                <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+                        <x-description.term>DNS</x-description.term>
+                        <x-description.details>A record pointing to server IP</x-description.details>
+
+                        <x-description.term>Agent</x-description.term>
+                        <x-description.details>None — signed URLs only</x-description.details>
+                    </x-description.list>
+                </div>
             </div>
-        @endif
+        </div>
     </div>
-</x-layouts::auth>
+</x-layouts::app>

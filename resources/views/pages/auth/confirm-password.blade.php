@@ -1,29 +1,39 @@
-<x-layouts::auth :title="__('Confirm password')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header
-            :title="__('Confirm password')"
-            :description="__('This is a secure area of the application. Please confirm your password before continuing.')"
-        />
+<x-layouts::app :title="__('Confirm password')">
+    <div>
+        <div class="flex items-center gap-3">
+            <flux:heading class="whitespace-nowrap">{{ __('Confirm password') }}</flux:heading>
+            <flux:separator />
+        </div>
 
-        <x-auth-session-status class="text-center" :status="session('status')" />
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <x-auth-session-status :status="session('status')" />
 
-        <form method="POST" action="{{ route('password.confirm.store') }}" class="flex flex-col gap-6">
-            @csrf
+                <form method="POST" action="{{ route('password.confirm.store') }}" class="space-y-8">
+                    @csrf
 
-            <flux:input
-                size="sm"
-                name="password"
-                :label="__('Password')"
-                type="password"
-                required
-                autocomplete="current-password"
-                :placeholder="__('Password')"
-                viewable
-            />
+                    <flux:input
+                        size="sm"
+                        name="password"
+                        :label="__('Password')"
+                        type="password"
+                        required
+                        autocomplete="current-password"
+                        :placeholder="__('Password')"
+                        viewable
+                    />
 
-            <flux:button size="sm" variant="primary" type="submit" class="w-full" data-test="confirm-password-button">
-                {{ __('Confirm') }}
-            </flux:button>
-        </form>
+                    <div class="flex items-center justify-end">
+                        <flux:button size="sm" variant="primary" type="submit" data-test="confirm-password-button">
+                            {{ __('Confirm') }}
+                        </flux:button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="text-sm/6 space-y-3">
+                <p>This is a secure area of the application. Confirm your password before continuing.</p>
+            </div>
+        </div>
     </div>
-</x-layouts::auth>
+</x-layouts::app>

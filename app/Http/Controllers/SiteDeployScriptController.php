@@ -87,8 +87,8 @@ echo "Cache Laravel configuration"
 \$PHP artisan view:cache
 
 echo "Set directory permissions"
-chmod -R 775 storage bootstrap/cache database
-chown -R fuse:fuse storage bootstrap/cache database
+sudo chmod -R 775 "\$DEPLOY_DIR/storage" "\$DEPLOY_DIR/bootstrap/cache" "\$DEPLOY_DIR/database"
+sudo chown -R fuse:fuse "\$DEPLOY_DIR/storage" "\$DEPLOY_DIR/bootstrap/cache" "\$DEPLOY_DIR/database"
 
 echo "Generate Caddy configuration"
 CADDY_CONFIG="/etc/caddy/sites.caddy"
